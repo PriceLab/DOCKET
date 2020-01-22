@@ -82,7 +82,7 @@ unless (-e "$outdir/row_fp.pca.gz") {
 	`python3 $Bin/pca.py $outdir/row_fp.raw --L $L | gzip -c > $outdir/row_fp.pca.gz`;
 }
 unless (-e "$outdir/row_fp.pc1_pc2.png") {
-	print "Plotting PCA on row fingerprints\n";
+	print "plotting PCA on row fingerprints\n";
 	`python3 $Bin/plotpca.py $outdir/row_fp.pca.gz  $outdir/row_fp.pc1_pc2.png`;
 }
 
@@ -116,7 +116,7 @@ unless (-e "$outdir/col_fp.pca.gz") {
 	`python3 $Bin/pca.py $outdir/col_fp.raw --L $L | gzip -c > $outdir/col_fp.pca.gz`;
 }
 unless (-e "$outdir/col_fp.pc1_pc2.png") {
-	print "Plotting PCA on col fingerprints\n";
+	print "plotting PCA on col fingerprints\n";
 	`python3 $Bin/plotpca.py $outdir/col_fp.pca.gz  $outdir/col_fp.pc1_pc2.png`;
 }
 
@@ -135,9 +135,11 @@ unless (-e "$outdir/col_chf.aaa.gz") {
 	`$lphbin/searchLPHs.pl $outdir/col_chf 0 1000000 $outdir/col_chf.aaa.hist | gzip -c > $outdir/col_chf.aaa.gz`;
 }
 unless (-e "$outdir/col_chf.names") {
+	print "indexing col content histogram fingerprints, using annoy\n";
 	`$Bin/annoyIndex.py --file $outdir/col_chf.norm --L 50 --out $outdir/col_chf`;
 }
 unless (-e "$outdir/col_chf.knn.gz") {
+	print "finding nearest-neighbors for each column, using annoy\n";
 	`$Bin/annoyQueryAll.py --index $outdir/col_chf --L 50 --k 100 | gzip -c > $outdir/col_chf.knn.gz`;
 }
 
@@ -224,7 +226,7 @@ sub compute_chf {
 	open OF, ">$where";
 	foreach my $id (sort {$a<=>$b || $a cmp $b} keys %$what) {
 		my %hist;
-		$hist{$_}++ foreach values %{$what->{$id}};
+		$hist{$_}++ foreach values %{$what->{$id}}; ## modify to get rid of surrounding quotes
 		
 		$CHF->resetFingerprint();
 		$CHF->recurseStructure(\%hist);
