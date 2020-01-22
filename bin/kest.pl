@@ -5,6 +5,9 @@ my $lphbin = "/users/gglusman/proj/LPH/data-fingerprints/bin";
 use lib "/users/gglusman/proj/LPH/data-fingerprints/bin";
 use LIBLPH;
 use XML::Simple qw(:strict);
+use FindBin qw($Bin);
+use lib $Bin;
+
 
 my $LPH = new LIBLPH;
 my $normalize = 1;
@@ -77,11 +80,11 @@ unless (-e "$outdir/row_fp.aaa.gz") {
 }
 unless (-e "$outdir/row_fp.pca.gz") {
 	print "PCA on row fingerprints\n";
-	`python3 $lphbin/pca.py $outdir/row_fp.raw --L $L | gzip -c > $outdir/row_fp.pca.gz`;
+	`python3 $Bin/pca.py $outdir/row_fp.raw --L $L | gzip -c > $outdir/row_fp.pca.gz`;
 }
 unless (-e "$outdir/row_fp.pc1_pc2.png") {
 	print "Plotting PCA on row fingerprints\n";
-	`python3 $lphbin/plotpca.py $outdir/row_fp.pca.gz  $outdir/row_fp.pc1_pc2.png`;
+	`python3 $Bin/plotpca.py $outdir/row_fp.pca.gz  $outdir/row_fp.pc1_pc2.png`;
 }
 
 
@@ -111,11 +114,11 @@ unless (-e "$outdir/col_fp.aaa.gz") {
 }
 unless (-e "$outdir/col_fp.pca.gz") {
 	print "PCA on col fingerprints\n";
-	`python3 $lphbin/pca.py $outdir/col_fp.raw --L $L | gzip -c > $outdir/col_fp.pca.gz`;
+	`python3 $Bin/pca.py $outdir/col_fp.raw --L $L | gzip -c > $outdir/col_fp.pca.gz`;
 }
 unless (-e "$outdir/col_fp.pc1_pc2.png") {
 	print "Plotting PCA on col fingerprints\n";
-	`python3 $lphbin/plotpca.py $outdir/col_fp.pca.gz  $outdir/col_fp.pc1_pc2.png`;
+	`python3 $Bin/plotpca.py $outdir/col_fp.pca.gz  $outdir/col_fp.pc1_pc2.png`;
 }
 
 my $col_chf_file = "$outdir/col_chf.norm";
