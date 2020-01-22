@@ -10,7 +10,6 @@ use lib $Bin;
 
 
 my $LPH = new LIBLPH;
-my $normalize = 1;
 my $L = 2000;
 $LPH->{'L'} = $L;
 my $decimals = 3;
@@ -68,7 +67,7 @@ if (0) { # show type votes from BDQC_lite
 my $row_fp_file = "$outdir/row_fp.raw";
 unless (-e $row_fp_file) {
 	print "computing row fingerprints\n";
-	compute_fp($info->{'rowwise'}, $row_fp_file);
+	compute_fp($info->{'rowwise'}, 0, $row_fp_file);
 }
 unless (-e "$outdir/row_fp.id") {
 	print "serializing row fingerprints\n";
@@ -89,20 +88,20 @@ unless (-e "$outdir/row_fp.pc1_pc2.png") {
 
 
 if (0) { ### THIS COULD BE VERY SLOW
-unless (-e "$outdir/col_sp.aaa.gz") {
-	print "comparing columns by Spearman correlation\n";
-	#`$lphbin/searchLPHs.pl $outdir/col_fp 0 1000000 $outdir/col_fp.aaa.hist | gzip -c > $outdir/col_fp.aaa.gz`;
-	correlate_all_spearman($info->{'colwise'}, "$outdir/col_sp.aaa", \@colids, \@rowids);
-	`sort -k3rn $outdir/col_sp.aaa | gzip -c > $outdir/col_sp.aaa.gz`;
-	#`unlink $outdir/col_sp.aaa`;
-}
+	unless (-e "$outdir/col_sp.aaa.gz") {
+		print "comparing columns by Spearman correlation\n";
+		#`$lphbin/searchLPHs.pl $outdir/col_fp 0 1000000 $outdir/col_fp.aaa.hist | gzip -c > $outdir/col_fp.aaa.gz`;
+		correlate_all_spearman($info->{'colwise'}, "$outdir/col_sp.aaa", \@colids, \@rowids);
+		`sort -k3rn $outdir/col_sp.aaa | gzip -c > $outdir/col_sp.aaa.gz`;
+		#`unlink $outdir/col_sp.aaa`;
+	}
 }
 
 # colwise fingerprints
 my $col_fp_file = "$outdir/col_fp.raw";
 unless (-e $col_fp_file) {
 	print "computing col fingerprints\n";
-	compute_fp($info->{'colwise'}, $col_fp_file);
+	compute_fp($info->{'colwise'}, 0, $col_fp_file);
 }
 unless (-e "$outdir/col_fp.id") {
 	print "serializing col fingerprints\n";
@@ -122,14 +121,14 @@ unless (-e "$outdir/col_fp.pc1_pc2.png") {
 }
 
 # column-wise content histogram fingerprints
-my $col_chf_file = "$outdir/col_chf.norm";
+my $col_chf_file = "$outdir/col_chf.raw";
 unless (-e $col_chf_file) {
 	print "computing col content histogram fingerprints\n";
-	compute_chf($info->{'colwise'}, $col_chf_file);
+	compute_chf($info->{'colwise'}, 0, $col_chf_file);
 }
 unless (-e "$outdir/col_chf.id") {
 	print "serializing col content histogram fingerprints\n";
-	`$lphbin/serializeLPH.pl $outdir/col_chf $L 1 0 $col_chf_file`;
+	`$lphbin/serializeLPH.pl $outdir/col_chf $L 1 1 $col_chf_file`;
 }
 unless (-e "$outdir/col_chf.aaa.gz") {
 	print "comparing col content histogram fingerprints\n";
@@ -149,7 +148,7 @@ unless (-e "$outdir/col_chf.knn.gz") {
 
 
 ########
-sub determine_format {
+sub determine_format { ###unfinished
 	my($file) = @_;
 	
 	my $test = `file $file`;
@@ -158,7 +157,7 @@ sub determine_format {
 	return '?';
 }
 
-sub evaluate_types {
+sub evaluate_types { ###unfinished
 	my($what) = @_;
 	
 	my(%allNil, %type, %mixed);
@@ -166,7 +165,6 @@ sub evaluate_types {
 		my(%votes, $n);
 		while (my($id2, $v) = each %$cargo) {
 			my $type = test_type($v);
-			#print join("\t", $id2, $type, $v), "\n" if $id1 eq 'population.height';
 			$votes{$type}++;
 			$n++;
 		}
@@ -187,7 +185,6 @@ sub evaluate_types {
 			
 		} else {
 			$mixed{$id1} = \@sorted;
-			#print join("\t", $id1, $n, $votes{$sorted[0]}, %votes), "\n";
 		}
 	}
 	#return \%type, \%mixed, \%allNil;
@@ -196,7 +193,7 @@ sub evaluate_types {
 
 
 sub compute_fp {
-	my($what, $where) = @_;
+	my($what, $normalize, $where) = @_;
 	
 	open OF, ">$where";
 	foreach my $id (sort {$a<=>$b || $a cmp $b} keys %$what) {
@@ -218,10 +215,9 @@ sub compute_fp {
 }
 
 sub compute_chf {
-	my($what, $where) = @_;
+	my($what, $normalize, $where) = @_;
 	
 	my $CHF = new LIBLPH;
-	my $normalize = 1;
 	my $L = 50;
 	$CHF->{'L'} = $L;
 	
@@ -423,7 +419,7 @@ sub read_xyz { # row-col-value triples
 	return \%ret;
 }
 
-sub read_xml {
+sub read_xml { ###unfinished
 	my($infile, $idcol, $storeColwise, $storeRowwise) = @_;
 	my(@headers, @colHist, $rows, @votes, %colwise, %rowwise, $id);
 	
@@ -452,7 +448,7 @@ sub read_xml {
 	return \%ret;
 }
 
-sub test_type {
+sub test_type { ###unfinished, should understand dates
 	my($v) = @_;
 	
 	my $type = 'str';
@@ -503,7 +499,6 @@ sub avgstd {
 	return $avg, $std;
 }
 
-
 sub isnumeric ($) {
 	no warnings;
 	my $v = $_[0];
@@ -516,7 +511,4 @@ sub isnumeric ($) {
 	} else {
 		return $v eq $v+0;
 	}
-	
-	# simplistic version, which fails for representations like .2, -.5:
-	#return $_[1] eq ($_[1]+0);
 }
