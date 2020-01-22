@@ -64,7 +64,7 @@ if (0) { # show type votes from BDQC_lite
 	}
 }
 
-# compute row (rowwise) fingerprints if needed
+# rowwise fingerprints
 my $row_fp_file = "$outdir/row_fp.raw";
 unless (-e $row_fp_file) {
 	print "computing row fingerprints\n";
@@ -98,7 +98,7 @@ unless (-e "$outdir/col_sp.aaa.gz") {
 }
 }
 
-# compute col (colwise) fingerprints if needed
+# colwise fingerprints
 my $col_fp_file = "$outdir/col_fp.raw";
 unless (-e $col_fp_file) {
 	print "computing col fingerprints\n";
@@ -121,6 +121,7 @@ unless (-e "$outdir/col_fp.pc1_pc2.png") {
 	`python3 $Bin/plotpca.py $outdir/col_fp.pca.gz  $outdir/col_fp.pc1_pc2.png`;
 }
 
+# column-wise content histogram fingerprints
 my $col_chf_file = "$outdir/col_chf.norm";
 unless (-e $col_chf_file) {
 	print "computing col content histogram fingerprints\n";
