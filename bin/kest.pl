@@ -135,6 +135,12 @@ unless (-e "$outdir/col_chf.aaa.gz") {
 	print "comparing col content histogram fingerprints\n";
 	`$lphbin/searchLPHs.pl $outdir/col_chf 0 1000000 $outdir/col_chf.aaa.hist | gzip -c > $outdir/col_chf.aaa.gz`;
 }
+unless (-e "$outdir/col_chf.names") {
+	`$Bin/annoyIndex.py --file $outdir/col_chf.norm --L 50 --out $outdir/col_chf`;
+}
+unless (-e "$outdir/col_chf.knn.gz") {
+	`$Bin/annoyQueryAll.py --index $outdir/col_chf --L 50 --k 100 | gzip -c > $outdir/col_chf.knn.gz`;
+}
 
 
 
