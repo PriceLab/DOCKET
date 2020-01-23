@@ -143,7 +143,7 @@ unless (-e "$outdir/col_chf.aaa.gz") {
 }
 unless (-e "$outdir/col_chf.names") {
 	print "indexing col content histogram fingerprints, using annoy\n";
-	`$Bin/annoyIndex.py --file $outdir/col_chf.norm --L 50 --out $outdir/col_chf`;
+	`$Bin/annoyIndex.py --file $outdir/col_chf.raw --L 50 --norm 1 --out $outdir/col_chf`;
 }
 unless (-e "$outdir/col_chf.knn.gz") {
 	print "finding nearest-neighbors for each column, using annoy\n";
