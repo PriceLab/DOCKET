@@ -7,6 +7,7 @@ use LIBLPH;
 use XML::Simple qw(:strict);
 use FindBin qw($Bin);
 use lib $Bin;
+use Storable;
 
 
 my $LPH = new LIBLPH;
@@ -37,6 +38,8 @@ if ($file_format eq 'xml') {
 	$info = read_xyz($infile, 1, ',', 1, 1); # 1 header line, comma-delimited
 }
 
+store $info->{'rowwise'}, "$outdir/rows.data" unless -s "$outdir/rows.data";
+store $info->{'colwise'}, "$outdir/cols.data" unless -s "$outdir/cols.data";
 my @rowids = sort {$a<=>$b || $a cmp $b} keys %{$info->{'rowwise'}};
 my @colids = sort {$a<=>$b || $a cmp $b} keys %{$info->{'colwise'}};
 
@@ -120,11 +123,15 @@ unless (-e "$outdir/col_fp.pc1_pc2.png") {
 	`python3 $Bin/plotpca.py $outdir/col_fp.pca.gz  $outdir/col_fp.pc1_pc2.png`;
 }
 
+# colwise histograms
+my $ch = compute_column_histograms($info->{'colwise'});
+store $ch, "$outdir/cols.hist" unless -s "$outdir/cols.hist";
+
 # column-wise content histogram fingerprints
 my $col_chf_file = "$outdir/col_chf.raw";
 unless (-e $col_chf_file) {
 	print "computing col content histogram fingerprints\n";
-	compute_chf($info->{'colwise'}, 0, $col_chf_file);
+	compute_chf($ch, 0, $col_chf_file);
 }
 unless (-e "$outdir/col_chf.id") {
 	print "serializing col content histogram fingerprints\n";
@@ -216,7 +223,43 @@ sub compute_fp {
 	close OF;
 }
 
+sub compute_column_histograms {
+	my($what) = @_;
+	my %hist;
+	
+	while (my($id, $ref) = each %$what) {
+		$hist{$id}{$_}++ foreach values %$ref; ## modify to get rid of surrounding quotes, other cleanups
+	}
+	return \%hist;
+}
+
 sub compute_chf {
+	my($what, $normalize, $where) = @_;
+	
+	my $CHF = new LIBLPH;
+	my $L = 50;
+	$CHF->{'L'} = $L;
+	
+	open OF, ">$where";
+	foreach my $id (sort {$a<=>$b || $a cmp $b} keys %$what) {
+		$CHF->resetFingerprint();
+		$CHF->recurseStructure($what->{$id});
+		next unless $CHF->{'statements'};
+		my $fp;
+		if ($normalize) {
+			$fp = $CHF->normalize();
+		} else {
+			$fp = $CHF->{'fp'};
+		}
+		my @v;                                               
+		push @v, @{$fp->{$_}} foreach sort {$a<=>$b} keys %$fp;
+		$id =~ s/[^A-Z0-9_\.\-\=,\+\*:;\@\^\`\|\~]+//gi;
+		print OF join("\t", $id, $CHF->{'statements'}, map {sprintf("%.${decimals}f", $_)} @v), "\n";
+	}
+	close OF;
+}
+
+sub compute_chf_old {
 	my($what, $normalize, $where) = @_;
 	
 	my $CHF = new LIBLPH;
