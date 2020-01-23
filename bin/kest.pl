@@ -29,17 +29,17 @@ my $info;
 if ($file_format eq 'xml') {
 	$info = read_xml($infile);
 } elsif ($file_format eq 'table') {
-	$info = read_tabular($infile, 1, 0, 0, 1, 1, 1); # 1 header line, default delimiter, id in column 0, skip 1 column
+	$info = read_tabular($infile, 1, 0, 0, 1); # 1 header line, default delimiter, id in column 0, skip 1 column
 } elsif ($file_format eq 'rtable') {
-	$info = read_tabular($infile, 1, ' ', 0, 1, 1, 1); # 1 header line, space-delimited, id in column 0, skip 1 column
+	$info = read_tabular($infile, 1, ' ', 0, 1); # 1 header line, space-delimited, id in column 0, skip 1 column
 } elsif ($file_format eq 'lol') {
-	$info = read_lol($infile, 0, 0, 0, 2, 1, 1); # 0 header lines, default delimiter, id in column 0, skip 2 columns
+	$info = read_lol($infile, 0, 0, 0, 2); # 0 header lines, default delimiter, id in column 0, skip 2 columns
 } elsif ($file_format eq 'xyz') {
-	$info = read_xyz($infile, 1, ',', 1, 1); # 1 header line, comma-delimited
+	$info = read_xyz($infile, 1, ','); # 1 header line, comma-delimited
 }
 
-store $info->{'rowwise'}, "$outdir/rows.data" unless -s "$outdir/rows.data";
-store $info->{'colwise'}, "$outdir/cols.data" unless -s "$outdir/cols.data";
+#store $info->{'rowwise'}, "$outdir/rows.data" unless -s "$outdir/rows.data";
+#store $info->{'colwise'}, "$outdir/cols.data" unless -s "$outdir/cols.data";
 my @rowids = sort {$a<=>$b || $a cmp $b} keys %{$info->{'rowwise'}};
 my @colids = sort {$a<=>$b || $a cmp $b} keys %{$info->{'colwise'}};
 
@@ -123,7 +123,7 @@ unless (-e "$outdir/col_fp.pc1_pc2.png") {
 	`python3 $Bin/plotpca.py $outdir/col_fp.pca.gz  $outdir/col_fp.pc1_pc2.png`;
 }
 
-# colwise histograms
+# column-wise histograms
 my $ch = compute_column_histograms($info->{'colwise'});
 store $ch, "$outdir/cols.hist" unless -s "$outdir/cols.hist";
 
@@ -343,7 +343,7 @@ sub correlate_all_spearman {
 }
 
 sub read_tabular {
-	my($infile, $headerLines, $delimiter, $idcol, $skipcols, $storeColwise, $storeRowwise) = @_;
+	my($infile, $headerLines, $delimiter, $idcol, $skipcols) = @_;
 	my(@headers, @names, @colHist, $rows, %colwise, %rowwise, $id);
 	$delimiter ||= "\t";
 	
@@ -382,19 +382,21 @@ sub read_tabular {
 		$id = $v[$idcol];
 		foreach my $col ($skipcols..$#v) {
 			my $v = $v[$col];
-			$colwise{$names[$col]}{$id} = $v if $storeColwise;
-			$rowwise{$id}{$names[$col]} = $v if $storeRowwise;
+			$colwise{$names[$col]}{$id} = $rowwise{$id}{$names[$col]} = $v;
 		}
 	}
 	close INF;
-	my %ret = ('headers', \@headers, 'colhist', \@colHist, 'rows', $rows);
-	$ret{'colwise'} = \%colwise if $storeColwise;
-	$ret{'rowwise'} = \%rowwise if $storeRowwise;
-	return \%ret;
+	return {
+		'headers' => \@headers,
+		'colhist' => \@colHist,
+		'rows'    => $rows,
+		'colwise' => \%colwise,
+		'rowwise' => \%rowwise
+	};
 }
 
 sub read_lol { # list of lists
-	my($infile, $headerLines, $delimiter, $idcol, $skipcols, $storeColwise, $storeRowwise) = @_;
+	my($infile, $headerLines, $delimiter, $idcol, $skipcols) = @_;
 	my(@headers, @colHist, $rows, %colwise, %rowwise, $id);
 	$delimiter ||= "\t";
 	
@@ -419,19 +421,21 @@ sub read_lol { # list of lists
 		$id = $v[$idcol];
 		foreach my $col ($skipcols..$#v) {
 			my $v = $v[$col];
-			$colwise{$v}{$id} = 1 if $storeColwise;
-			$rowwise{$id}{$v} = 1 if $storeRowwise;
+			$colwise{$v}{$id} = $rowwise{$id}{$v} = 1;
 		}
 	}
 	close INF;
-	my %ret = ('headers', \@headers, 'colhist', \@colHist, 'rows', $rows);
-	$ret{'colwise'} = \%colwise if $storeColwise;
-	$ret{'rowwise'} = \%rowwise if $storeRowwise;
-	return \%ret;
+	return {
+		'headers' => \@headers,
+		'colhist' => \@colHist,
+		'rows'    => $rows,
+		'colwise' => \%colwise,
+		'rowwise' => \%rowwise
+	};
 }
 
 sub read_xyz { # row-col-value triples
-	my($infile, $headerLines, $delimiter, $storeColwise, $storeRowwise) = @_;
+	my($infile, $headerLines, $delimiter) = @_;
 	my(@headers, @colHist, $rows, %colwise, %rowwise, $id, $attr, $v);
 	$delimiter ||= "\t";
 	
@@ -454,18 +458,20 @@ sub read_xyz { # row-col-value triples
 		$colHist[scalar @v]++;
 		$rows++;
 		($id, $attr, $v) = @v;
-		$colwise{$attr}{$id} = $v if $storeColwise;
-		$rowwise{$id}{$attr} = $v if $storeRowwise;
+		$colwise{$attr}{$id} = $rowwise{$id}{$attr} = $v;
 	}
 	close INF;
-	my %ret = ('headers', \@headers, 'colhist', \@colHist, 'rows', $rows);
-	$ret{'colwise'} = \%colwise if $storeColwise;
-	$ret{'rowwise'} = \%rowwise if $storeRowwise;
-	return \%ret;
+	return {
+		'headers' => \@headers,
+		'colhist' => \@colHist,
+		'rows'    => $rows,
+		'colwise' => \%colwise,
+		'rowwise' => \%rowwise
+	};
 }
 
 sub read_xml { ###unfinished
-	my($infile, $idcol, $storeColwise, $storeRowwise) = @_;
+	my($infile, $idcol) = @_;
 	my(@headers, @colHist, $rows, @votes, %colwise, %rowwise, $id);
 	
 	my $content = XMLin($infile, ForceArray => 0, KeyAttr => 1);
@@ -481,16 +487,18 @@ sub read_xml { ###unfinished
 		$id = $v[$idcol];
 		foreach my $col (0..$#v) {
 			my $v = $v[$col];
-			$colwise{$headers[0][$col]}{$id} = $v if $storeColwise;
-			$rowwise{$id}{$headers[0][$col]} = $v if $storeRowwise;
+			$colwise{$headers[0][$col]}{$id} = $rowwise{$id}{$headers[0][$col]} = $v;
 		}
 	}
 	
 	close INF;
-	my %ret = ('headers', \@headers, 'colhist', \@colHist, 'rows', $rows);
-	$ret{'colwise'} = \%colwise if $storeColwise;
-	$ret{'rowwise'} = \%rowwise if $storeRowwise;
-	return \%ret;
+	return {
+		'headers' => \@headers,
+		'colhist' => \@colHist,
+		'rows'    => $rows,
+		'colwise' => \%colwise,
+		'rowwise' => \%rowwise
+	};
 }
 
 sub test_type { ###unfinished, should understand dates
