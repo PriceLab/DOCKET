@@ -21,7 +21,6 @@ with open(args.file, 'r') as f:
 		id = re.sub('.json.gz', '', id)
 		id = re.sub('\.', '|', id)
 		names.append(id)
-		### normalize values if needed
 		v = [float(j) for j in v]
 		if args.norm:
 		    avg = statistics.mean(v)
