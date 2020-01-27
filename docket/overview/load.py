@@ -96,7 +96,7 @@ def load_data(file_list, sep=None, skip_rows=0, skip_cols=0, has_header=False, h
 
         # Save skipped lines and save column labels, if available
         skipped_lines = data[:skip_rows]
-        col_labels = data[skip_rows] if has_header and len(data) > skip_rows else None
+        col_labels = data[skip_rows] if has_header and len(data) > skip_rows else ''
 
         # Override specified separator if csv
         if ext == '.csv':
@@ -110,11 +110,12 @@ def load_data(file_list, sep=None, skip_rows=0, skip_cols=0, has_header=False, h
 
         if ext == '.json':
             num_cols = 1
+            col_labels = [col_labels] if isinstance(col_labels, str) else []
         else:
             # Split each row of data and get row labels if available
             data = [row.split() if sep is None else row.split(sep) for row in data]
             if has_index:
-                # Get row labels and get data to the right of skipped columns
+                # Get row labels
                 row_labels = [row[skip_cols] if len(row) > skip_cols else f'R{i}' for i, row in enumerate(data)]
 
             # Get data to the right of skipped columns
@@ -122,17 +123,19 @@ def load_data(file_list, sep=None, skip_rows=0, skip_cols=0, has_header=False, h
 
             # Get number of items in each row
             num_cols = [len(row) for row in data]
-            max_cols = max(num_cols)
+            max_cols = max(num_cols) if len(num_cols) > 0 else 0
 
-            # Split column labels line if it exists
-            if col_labels is not None:
+            # Generate column labels
+            if has_header:
                 col_labels = col_labels.split() if sep is None else col_labels.split(sep)
                 diff = max_cols-len(col_labels)
                 col_labels = [f'C{i}' if i < diff else col_labels[i-max(0, diff)] for i in range(max_cols)]
+            else:
+                col_labels = [f'C{i}' for i in range(max_cols)]
 
         # Generate metadata
         metadata = dict()
-        metadata['file_name'] = file
+        metadata['file_path'] = file
         metadata['file_type'] = ext
         metadata['num_rows'] = len(data)
         metadata['num_cols'] = num_cols

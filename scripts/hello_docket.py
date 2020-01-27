@@ -23,8 +23,23 @@ docket_params = {
 }
 
 dm1 = docket.DocketMaker(**docket_params)
-print('')
-for f in dm1.file_list:
-    print(f)
+
+for file_root, mdata in dm1.file_metadata.items():
+    # Get contents of metadata
+    file_type = mdata['file_type']
+    file_path = mdata['file_path']
+    num_rows = mdata['num_rows']
+    num_cols = mdata['num_cols']
+
+    # Print summary of metadata
+    print(f'\n----- File: {file_root}{file_type} -----')
+    print(f'File path: {file_path}')
+    print(f'Number of rows: {num_rows}')
+    print(f'Number of cols (set): {set(num_cols)}')
+    print('Skipped lines:')
+    for row in mdata['skipped_lines']:
+        print(row)
+    print('Data sample:')
+    for i, row in enumerate()
 
 print('done')
