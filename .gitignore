@@ -1,3 +1,6 @@
+# Exclude subfolders in plugins folder
+docket/plugins/*/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -76,6 +79,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+notebooks/.ipynb_checkpoints
 
 # IPython
 profile_default/
@@ -113,6 +117,9 @@ venv.bak/
 # Spyder project settings
 .spyderproject
 .spyproject
+
+# JetBrains IDEs
+.idea
 
 # Rope project settings
 .ropeproject
