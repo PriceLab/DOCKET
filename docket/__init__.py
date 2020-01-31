@@ -1,9 +1,10 @@
 import os
 import sys
 from docket.maker import DocketMaker
+import docket.overview.transform as transform
 
 # Import data fingerprints module, if available
-if os.path.exists('./docket/plugins/fingerprint/datafingerprint'):
-    import docket.plugins.fingerprint.datafingerprint as dfp
-elif os.path.exists('./../docket/plugins/fingerprint/datafingerprint'):
-    import docket.plugins.fingerprint.datafingerprint as dfp
+if os.path.exists('./docket/plugins/fingerprint'):
+    import docket.plugins.fingerprint as dfp
+elif os.path.exists('./../docket/plugins/fingerprint'):
+    import docket.plugins.fingerprint as dfp

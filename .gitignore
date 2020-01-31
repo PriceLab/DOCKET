@@ -1,6 +1,11 @@
 # Exclude subfolders in plugins folder
 docket/plugins/*/
 
+# Exclude nextflow folders
+work/
+.nextflow/
+.nextflow.*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

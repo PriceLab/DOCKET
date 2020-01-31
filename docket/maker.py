@@ -3,7 +3,7 @@
 # read one or more files and generate a docket containing vector encodings
 # (e.g. data fingerprints) of the file(s) for rapid comparison
 #
-# last updated: 1/27/20
+# last updated: 1/29/20
 #
 # naming conventions:
 # https://www.python.org/dev/peps/pep-0008/#prescriptive-naming-conventions
@@ -11,7 +11,7 @@
 
 import json
 import docket.overview.load as load
-import docket.overview.encode as encode
+import docket.overview.transform as transform
 
 
 class DocketMaker:
@@ -55,5 +55,27 @@ class DocketMaker:
                                                             skip_cols=self.skip_cols,
                                                             has_header=self.has_header,
                                                             has_index=self.has_index)
-        # Generate file encodings (e.g. fingerprints)
-        self.encodings = {}
+
+    # Return data set labels
+    def data_labels(self):
+        return list(self.file_data.keys())
+
+    # Print specified number of rows (default: 5) of a specified data set label
+    def print_data_summary(self, label, max_rows=5):
+        if label not in self.data_labels():
+            print(f'Data label \'{label}\' does not exist.')
+            return
+
+        for i, row in enumerate(self.file_data[label]):
+            if i >= max_rows:
+                break
+            print('\t'.join(row))
+
+    # Ensure that all rows in data (for a specified label) are the same length by padding
+    def pad_rows(self, label, pad_size=None, pad_value=None):
+        if label not in self.data_labels():
+            print(f'Data label \'{label}\' does not exist.')
+            return
+
+        data = self.file_data[label]
+        self.file_data[label] = transform.pad_tabular_data(data, pad_size, pad_value)

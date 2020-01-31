@@ -1,8 +1,8 @@
 # -----------------------------------------------------------------------------
 # load.py
-# read one or more files into a format ready for encoding
+# read one or more files into a format ready to transform and analyze
 #
-# last updated: 1/26/20
+# last updated: 1/28/20
 #
 # naming conventions:
 # https://www.python.org/dev/peps/pep-0008/#prescriptive-naming-conventions
