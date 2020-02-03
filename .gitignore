@@ -1,3 +1,14 @@
+<<<<<<< HEAD
+=======
+# Exclude subfolders in plugins folder
+docket/plugins/*/
+
+# Exclude nextflow folders
+work/
+.nextflow/
+.nextflow.*
+
+>>>>>>> 1143e0ff66d9060f89ef640b1c1fd037366d9ebd
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -76,6 +87,10 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+<<<<<<< HEAD
+=======
+notebooks/.ipynb_checkpoints
+>>>>>>> 1143e0ff66d9060f89ef640b1c1fd037366d9ebd
 
 # IPython
 profile_default/
@@ -114,6 +129,12 @@ venv.bak/
 .spyderproject
 .spyproject
 
+<<<<<<< HEAD
+=======
+# JetBrains IDEs
+.idea
+
+>>>>>>> 1143e0ff66d9060f89ef640b1c1fd037366d9ebd
 # Rope project settings
 .ropeproject
 
