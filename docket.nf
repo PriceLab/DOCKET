@@ -112,7 +112,7 @@ process plot_PCA_row_fingerprints {
 	/* plot PC1-PC2 on fingerprints of rows */
 	input: val rfp from rowsfppca
 	"""
-	${dbin}/plotpca.py ${rfp}.pca.gz ${rfp}.pc1_pc2.png
+	${dbin}/plotpca.py ${rfp}.pca.gz ${rfp}.pc1_pc2.pdf
 	"""
 }
 process compare_row_fingerprints {
@@ -141,6 +141,59 @@ process KNN_row_fingerprints {
 	${dbin}/annoyQueryAll.py --index ${rfp} --L $L --k 100 | gzip -c > ${rfp}.knn.gz
 	"""
 }
-
 /* END SECTION: row analysis pipeline */
+
+
+/* SECTION: column analysis pipeline */
+process compute_col_fingerprints {
+	/* col-wise fingerprints */
+	input: val rd from colsdata
+	output: val "${docket}/cols_fp" into colsfp
+	"""
+	${dbin}/compute_fp.pl $rd cols $L $docket
+	"""
+}
+process PCA_col_fingerprints {
+	/* compute PCA on fingerprints of columns */
+	/* ### issue: recomputes every time, will be slow for large data sets ### */
+	input: val rfp from colsfp
+	output: val "${docket}/cols_fp" into colsfppca
+	"""
+	${dbin}/pca.py ${rfp}.raw.gz --L $L | gzip -c > ${rfp}.pca.gz
+	"""
+}
+process plot_PCA_col_fingerprints {
+	/* plot PC1-PC2 on fingerprints of columns */
+	input: val rfp from colsfppca
+	"""
+	${dbin}/plotpca.py ${rfp}.pca.gz ${rfp}.pc1_pc2.pdf
+	"""
+}
+process compare_col_fingerprints {
+	/* compare fingerprints of columns */
+	/* ### issue: recomputes every time, will be slow for large data sets ### */
+	input: val rfp from colsfp
+	"""
+	${lphbin}/searchLPHs.pl $rfp 0 1000000 ${rfp}.aaa.hist | gzip -c > ${rfp}.aaa.gz
+	"""
+}
+process index_col_fingerprints {
+	/* index fingerprints of columns, using annoy */
+	/* ### issue: recomputes every time ### */
+	/* ### issue: pca.py doesn't expect gzipped input ### */
+	input: val rfp from colsfp
+	output: val "${docket}/cols_fp" into colsfpindex
+	"""
+	${dbin}/annoyIndexGz.py --file ${rfp}.raw.gz --L $L --norm 1 --out $rfp
+	"""
+}
+process KNN_col_fingerprints {
+	/* find k nearest neighbors of columns, using annoy */
+	/* ### issue: recomputes every time ### */
+	input: val rfp from colsfpindex
+	"""
+	${dbin}/annoyQueryAll.py --index ${rfp} --L $L --k 100 | gzip -c > ${rfp}.knn.gz
+	"""
+}
+/* END SECTION: column analysis pipeline */
 
