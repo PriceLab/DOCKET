@@ -104,7 +104,7 @@ process PCA_row_fingerprints {
 	/* ### issue: recomputes every time, will be slow for large data sets ### */
 	input: val rfp from rowsfp
 	"""
-	${dbin}/pca.py $rfp --L $L | gzip -c > ${rfp}.pca.gz
+	${dbin}/pca.py ${rfp}.raw.gz --L $L | gzip -c > ${rfp}.pca.gz
 	"""
 }
 process compare_row_fingerprints {

@@ -1,3 +1,5 @@
+#!/bin/env python3
+
 import sys, argparse
 import numpy as np
 #from scipy import stats
