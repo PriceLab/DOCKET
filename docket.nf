@@ -48,6 +48,22 @@ process compute_col_hist_fingerprints {
 	${dbin}/compute_hist_fp.pl $ch cols $histL $docket
 	"""
 }
+process PCA_col_hist_fingerprints {
+	/* compute PCA on fingerprints of column histograms */
+	/* ### issue: recomputes every time, will be slow for large data sets ### */
+	input: val chfp from colshistfp
+	output: val "${docket}/cols_hist_fp" into colshistfppca
+	"""
+	${dbin}/pca.py ${chfp}.raw.gz --L $histL | gzip -c > ${chfp}.pca.gz
+	"""
+}
+process plot_PCA_col_hist_fingerprints {
+	/* plot PC1-PC2 on fingerprints of column histograms */
+	input: val chfp from colshistfppca
+	"""
+	${dbin}/plotpca.py ${chfp}.pca.gz ${chfp}.pc1_pc2.pdf
+	"""
+}
 process compare_col_hist_fingerprints {
 	/* compare fingerprints of column-wise histograms of observed values */
 	/* ### issue: recomputes every time, will be slow for large data sets ### */
@@ -147,52 +163,52 @@ process KNN_row_fingerprints {
 /* SECTION: column analysis pipeline */
 process compute_col_fingerprints {
 	/* col-wise fingerprints */
-	input: val rd from colsdata
+	input: val cd from colsdata
 	output: val "${docket}/cols_fp" into colsfp
 	"""
-	${dbin}/compute_fp.pl $rd cols $L $docket
+	${dbin}/compute_fp.pl $cd cols $L $docket
 	"""
 }
 process PCA_col_fingerprints {
 	/* compute PCA on fingerprints of columns */
 	/* ### issue: recomputes every time, will be slow for large data sets ### */
-	input: val rfp from colsfp
+	input: val cfp from colsfp
 	output: val "${docket}/cols_fp" into colsfppca
 	"""
-	${dbin}/pca.py ${rfp}.raw.gz --L $L | gzip -c > ${rfp}.pca.gz
+	${dbin}/pca.py ${cfp}.raw.gz --L $L | gzip -c > ${cfp}.pca.gz
 	"""
 }
 process plot_PCA_col_fingerprints {
 	/* plot PC1-PC2 on fingerprints of columns */
-	input: val rfp from colsfppca
+	input: val cfp from colsfppca
 	"""
-	${dbin}/plotpca.py ${rfp}.pca.gz ${rfp}.pc1_pc2.pdf
+	${dbin}/plotpca.py ${cfp}.pca.gz ${cfp}.pc1_pc2.pdf
 	"""
 }
 process compare_col_fingerprints {
 	/* compare fingerprints of columns */
 	/* ### issue: recomputes every time, will be slow for large data sets ### */
-	input: val rfp from colsfp
+	input: val cfp from colsfp
 	"""
-	${lphbin}/searchLPHs.pl $rfp 0 1000000 ${rfp}.aaa.hist | gzip -c > ${rfp}.aaa.gz
+	${lphbin}/searchLPHs.pl $cfp 0 1000000 ${cfp}.aaa.hist | gzip -c > ${cfp}.aaa.gz
 	"""
 }
 process index_col_fingerprints {
 	/* index fingerprints of columns, using annoy */
 	/* ### issue: recomputes every time ### */
 	/* ### issue: pca.py doesn't expect gzipped input ### */
-	input: val rfp from colsfp
+	input: val cfp from colsfp
 	output: val "${docket}/cols_fp" into colsfpindex
 	"""
-	${dbin}/annoyIndexGz.py --file ${rfp}.raw.gz --L $L --norm 1 --out $rfp
+	${dbin}/annoyIndexGz.py --file ${cfp}.raw.gz --L $L --norm 1 --out $cfp
 	"""
 }
 process KNN_col_fingerprints {
 	/* find k nearest neighbors of columns, using annoy */
 	/* ### issue: recomputes every time ### */
-	input: val rfp from colsfpindex
+	input: val cfp from colsfpindex
 	"""
-	${dbin}/annoyQueryAll.py --index ${rfp} --L $L --k 100 | gzip -c > ${rfp}.knn.gz
+	${dbin}/annoyQueryAll.py --index ${cfp} --L $L --k 100 | gzip -c > ${cfp}.knn.gz
 	"""
 }
 /* END SECTION: column analysis pipeline */
