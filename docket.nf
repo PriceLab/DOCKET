@@ -103,8 +103,16 @@ process PCA_row_fingerprints {
 	/* compute PCA on fingerprints of rows */
 	/* ### issue: recomputes every time, will be slow for large data sets ### */
 	input: val rfp from rowsfp
+	output: val "${docket}/rows_fp" into rowsfppca
 	"""
 	${dbin}/pca.py ${rfp}.raw.gz --L $L | gzip -c > ${rfp}.pca.gz
+	"""
+}
+process plot_PCA_row_fingerprints {
+	/* plot PC1-PC2 on fingerprints of rows */
+	input: val rfp from rowsfppca
+	"""
+	${dbin}/plotpca.py ${rfp}.pca.gz ${rfp}.pc1_pc2.png
 	"""
 }
 process compare_row_fingerprints {
@@ -133,5 +141,6 @@ process KNN_row_fingerprints {
 	${dbin}/annoyQueryAll.py --index ${rfp} --L $L --k 100 | gzip -c > ${rfp}.knn.gz
 	"""
 }
+
 /* END SECTION: row analysis pipeline */
 
