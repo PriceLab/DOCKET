@@ -66,6 +66,48 @@ if (0) { # show type votes from BDQC_lite
 	}
 }
 
+
+# row-wise histograms
+my $rh = compute_content_histogram($info->{'rowwise'});
+store $rh, "$outdir/rows.hist" unless -s "$outdir/rows.hist";
+
+foreach my $key (sort keys %$rh) {
+	my @k = sort {$rh->{$key}{$b} <=> $rh->{$key}{$a}} keys %{$rh->{$key}};
+	print join("\t", $key, scalar keys %{$rh->{$key}}, map {"$k[$_]:$rh->{$key}{$k[$_]}"} (0..9)), "\n";
+}
+exit;
+
+
+# column-wise histograms
+my $ch = compute_content_histogram($info->{'colwise'});
+store $ch, "$outdir/cols.hist" unless -s "$outdir/cols.hist";
+exit;
+# column-wise content histogram fingerprints
+my $col_chf_file = "$outdir/col_chf.raw";
+unless (-e $col_chf_file) {
+	print "computing col content histogram fingerprints\n";
+	compute_chf($ch, 0, $col_chf_file);
+}
+unless (-e "$outdir/col_chf.id") {
+	print "serializing col content histogram fingerprints\n";
+	`$lphbin/serializeLPH.pl $outdir/col_chf $L 1 1 $col_chf_file`;
+}
+unless (-e "$outdir/col_chf.aaa.gz") {
+	print "comparing col content histogram fingerprints\n";
+	`$lphbin/searchLPHs.pl $outdir/col_chf 0 1000000 $outdir/col_chf.aaa.hist | gzip -c > $outdir/col_chf.aaa.gz`;
+}
+unless (-e "$outdir/col_chf.names") {
+	print "indexing col content histogram fingerprints, using annoy\n";
+	`$Bin/annoyIndex.py --file $outdir/col_chf.raw --L 50 --norm 1 --out $outdir/col_chf`;
+}
+unless (-e "$outdir/col_chf.knn.gz") {
+	print "finding nearest-neighbors for each column, using annoy\n";
+	`$Bin/annoyQueryAll.py --index $outdir/col_chf --L 50 --k 100 | gzip -c > $outdir/col_chf.knn.gz`;
+}
+
+
+
+
 # rowwise fingerprints
 my $row_fp_file = "$outdir/row_fp.raw";
 unless (-e $row_fp_file) {
@@ -122,35 +164,6 @@ unless (-e "$outdir/col_fp.pc1_pc2.png") {
 	print "plotting PCA on col fingerprints\n";
 	`python3 $Bin/plotpca.py $outdir/col_fp.pca.gz  $outdir/col_fp.pc1_pc2.png`;
 }
-
-# column-wise histograms
-my $ch = compute_column_histograms($info->{'colwise'});
-store $ch, "$outdir/cols.hist" unless -s "$outdir/cols.hist";
-
-# column-wise content histogram fingerprints
-my $col_chf_file = "$outdir/col_chf.raw";
-unless (-e $col_chf_file) {
-	print "computing col content histogram fingerprints\n";
-	compute_chf($ch, 0, $col_chf_file);
-}
-unless (-e "$outdir/col_chf.id") {
-	print "serializing col content histogram fingerprints\n";
-	`$lphbin/serializeLPH.pl $outdir/col_chf $L 1 1 $col_chf_file`;
-}
-unless (-e "$outdir/col_chf.aaa.gz") {
-	print "comparing col content histogram fingerprints\n";
-	`$lphbin/searchLPHs.pl $outdir/col_chf 0 1000000 $outdir/col_chf.aaa.hist | gzip -c > $outdir/col_chf.aaa.gz`;
-}
-unless (-e "$outdir/col_chf.names") {
-	print "indexing col content histogram fingerprints, using annoy\n";
-	`$Bin/annoyIndex.py --file $outdir/col_chf.raw --L 50 --norm 1 --out $outdir/col_chf`;
-}
-unless (-e "$outdir/col_chf.knn.gz") {
-	print "finding nearest-neighbors for each column, using annoy\n";
-	`$Bin/annoyQueryAll.py --index $outdir/col_chf --L 50 --k 100 | gzip -c > $outdir/col_chf.knn.gz`;
-}
-
-
 
 
 
@@ -223,12 +236,12 @@ sub compute_fp {
 	close OF;
 }
 
-sub compute_column_histograms {
+sub compute_content_histogram {
 	my($what) = @_;
 	my %hist;
 	
 	while (my($id, $ref) = each %$what) {
-		$hist{$id}{$_}++ foreach values %$ref; ## modify to get rid of surrounding quotes, other cleanups
+		$hist{$id}{$_}++ foreach values %$ref; ## modify to get rid of surrounding quotes, trimming numerical resolution, other cleanups
 	}
 	return \%hist;
 }

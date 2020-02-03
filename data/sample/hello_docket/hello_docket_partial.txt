@@ -1,0 +1,19 @@
+DOCKET will accelerate the work of researchers who
+develop Knowledge Providers by providing a domain-agnostic
+and researcher-driven solution to analyze
+data to extract knowledge for the Translator
+Knowledge Graph (TKG). DOCKET has three main
+functions: Overview, Compare and Integrate.
+
+DOCKET Overview will embody a completely
+automated workflow going from raw input data to mini knowledge
+graphs.
+
+DOCKET Compare will enable comparing two or more versions of
+the same data set.
+
+DOCKET Integrate will perform three types of computations.
+The first computation is data matching, merging and selecting.
+The second computation is sequential integration for different
+levels of data. The third computation is to integrate different
+datasets from different levels simultaneously.
