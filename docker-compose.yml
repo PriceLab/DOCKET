@@ -1,0 +1,14 @@
+version: "2.1"
+services:
+  docket:
+    build: "."
+    image: "docket-dev"
+    entrypoint: ['/bin/bash']
+    tty: true
+    stdin_open: true
+    environment:
+      DEBUG: 1
+      PYTHONUNBUFFERED: 1
+      PYTHONPATH: '/usr/local:/app'
+    volumes:
+      - ./:/app
