@@ -8,6 +8,7 @@ params.fmt = 'table'
 params.docket = 'test_data.docket'
 params.L = 2000
 params.histL = 50
+params.minTriples = 10
 
 /* interpret parameters */
 input = file(params.infile)
@@ -110,9 +111,25 @@ process row_histograms {
 process compute_row_fingerprints {
 	/* row-wise fingerprints */
 	input: val rd from rowsdata
+	output: val "${docket}/rows_allfp.raw.gz" into rowsallfp
+	"""
+	${dbin}/compute_fp.pl $rd rows $L ${docket}/rows_allfp.raw.gz | gzip -c > ${docket}/rows_allfp.raw.gz
+	"""
+}
+process trim_row_fingerprints {
+	/* trim row-wise fingerprints by triples */
+	input: val rfp from rowsallfp
+	output: val "${docket}/rows_fp.raw.gz" into rowstrimfp
+	"""
+	${dbin}/filterTable.pl $rfp 1 $params.minTriples | gzip -c > ${docket}/rows_fp.raw.gz
+	"""
+}
+process serialize_trim_row_fingerprints {
+	/* serialize trimmed row-wise fingerprints */
+	input: val rfp from rowstrimfp
 	output: val "${docket}/rows_fp" into rowsfp
 	"""
-	${dbin}/compute_fp.pl $rd rows $L $docket
+	${lphbin}/serializeLPH.pl ${docket}/rows_fp $L 1 1 $rfp
 	"""
 }
 process PCA_row_fingerprints {
@@ -136,11 +153,9 @@ process compare_row_fingerprints {
 	/* ### issue: recomputes every time, will be slow for large data sets ### */
 	input: val rfp from rowsfp
 	
-	script:
-	if (1)
-		"""
-		${lphbin}/searchLPHs.pl $rfp 0 1000000 ${rfp}.aaa.hist | gzip -c > ${rfp}.aaa.gz
-		"""
+	"""
+	${lphbin}/searchLPHs.pl $rfp 0 1000000 ${rfp}.aaa.hist | gzip -c > ${rfp}.aaa.gz
+	"""
 }
 process index_row_fingerprints {
 	/* index fingerprints of rows, using annoy */
@@ -167,9 +182,25 @@ process KNN_row_fingerprints {
 process compute_col_fingerprints {
 	/* col-wise fingerprints */
 	input: val cd from colsdata
+	output: val "${docket}/cols_allfp.raw.gz" into colsallfp
+	"""
+	${dbin}/compute_fp.pl $cd cols $L ${docket}/cols_allfp.raw.gz | gzip -c > ${docket}/cols_allfp.raw.gz
+	"""
+}
+process trim_col_fingerprints {
+	/* trim col-wise fingerprints by triples */
+	input: val cfp from colsallfp
+	output: val "${docket}/cols_fp.raw.gz" into colstrimfp
+	"""
+	${dbin}/filterTable.pl $cfp 1 $params.minTriples | gzip -c > ${docket}/cols_fp.raw.gz
+	"""
+}
+process serialize_trim_col_fingerprints {
+	/* serialize trimmed col-wise fingerprints */
+	input: val cfp from colstrimfp
 	output: val "${docket}/cols_fp" into colsfp
 	"""
-	${dbin}/compute_fp.pl $cd cols $L $docket
+	${lphbin}/serializeLPH.pl ${docket}/cols_fp $L 1 1 $cfp
 	"""
 }
 process PCA_col_fingerprints {
