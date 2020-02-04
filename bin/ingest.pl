@@ -56,7 +56,10 @@ sub read_tabular {
 	}
 	
 	foreach my $i (1..$headerLines) {
-		$_ = <INF>;
+		while (<INF>) {
+			next if /^#/;
+			last;
+		}
 		chomp;
 		s/\r//g;
 		my(@v) = split $delimiter;

@@ -135,9 +135,12 @@ process compare_row_fingerprints {
 	/* compare fingerprints of rows */
 	/* ### issue: recomputes every time, will be slow for large data sets ### */
 	input: val rfp from rowsfp
-	"""
-	${lphbin}/searchLPHs.pl $rfp 0 1000000 ${rfp}.aaa.hist | gzip -c > ${rfp}.aaa.gz
-	"""
+	
+	script:
+	if (1)
+		"""
+		${lphbin}/searchLPHs.pl $rfp 0 1000000 ${rfp}.aaa.hist | gzip -c > ${rfp}.aaa.gz
+		"""
 }
 process index_row_fingerprints {
 	/* index fingerprints of rows, using annoy */
@@ -196,7 +199,6 @@ process compare_col_fingerprints {
 process index_col_fingerprints {
 	/* index fingerprints of columns, using annoy */
 	/* ### issue: recomputes every time ### */
-	/* ### issue: pca.py doesn't expect gzipped input ### */
 	input: val cfp from colsfp
 	output: val "${docket}/cols_fp" into colsfpindex
 	"""
@@ -206,6 +208,7 @@ process index_col_fingerprints {
 process KNN_col_fingerprints {
 	/* find k nearest neighbors of columns, using annoy */
 	/* ### issue: recomputes every time ### */
+	/* publishDir "$params.docket", mode: 'copy' */
 	input: val cfp from colsfpindex
 	"""
 	${dbin}/annoyQueryAll.py --index ${cfp} --L $L --k 100 | gzip -c > ${cfp}.knn.gz
