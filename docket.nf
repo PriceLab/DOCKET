@@ -38,7 +38,7 @@ process column_histograms {
 	input: val cd from colsdata
 	output: val "${docket}/cols_hist.json" into colshist
 	"""
-	${dbin}/compute_hist.pl $cd cols $docket
+	${dbin}/compute_hist.pl $cd ${docket}/cols_hist.json.gz | gzip -c > ${docket}/cols_hist.json.gz
 	"""
 }
 process compute_col_hist_fingerprints {
@@ -46,7 +46,8 @@ process compute_col_hist_fingerprints {
 	input: val ch from colshist
 	output: val "${docket}/cols_hist_fp" into colshistfp
 	"""
-	${dbin}/compute_hist_fp.pl $ch cols $histL $docket
+	${dbin}/compute_fp.pl $ch $histL ${docket}/cols_hist_fp.raw.gz | gzip -c > ${docket}/cols_hist_fp.raw.gz
+	${lphbin}/serializeLPH.pl ${docket}/cols_hist_fp $histL 1 1 ${docket}/cols_hist_fp.raw.gz
 	"""
 }
 process PCA_col_hist_fingerprints {
@@ -100,7 +101,7 @@ process row_histograms {
 	input: val rd from rowsdata
 	output: val "${docket}/rows_hist.json" into rowshist
 	"""
-	${dbin}/compute_hist.pl $rd rows $docket
+	${dbin}/compute_hist.pl $rd ${docket}/rows_hist.json.gz | gzip -c > ${docket}/rows_hist.json.gz
 	"""
 }
 /* END SECTION: row histogram pipeline */
@@ -113,7 +114,7 @@ process compute_row_fingerprints {
 	input: val rd from rowsdata
 	output: val "${docket}/rows_allfp.raw.gz" into rowsallfp
 	"""
-	${dbin}/compute_fp.pl $rd rows $L ${docket}/rows_allfp.raw.gz | gzip -c > ${docket}/rows_allfp.raw.gz
+	${dbin}/compute_fp.pl $rd $L ${docket}/rows_allfp.raw.gz | gzip -c > ${docket}/rows_allfp.raw.gz
 	"""
 }
 process trim_row_fingerprints {
@@ -184,7 +185,7 @@ process compute_col_fingerprints {
 	input: val cd from colsdata
 	output: val "${docket}/cols_allfp.raw.gz" into colsallfp
 	"""
-	${dbin}/compute_fp.pl $cd cols $L ${docket}/cols_allfp.raw.gz | gzip -c > ${docket}/cols_allfp.raw.gz
+	${dbin}/compute_fp.pl $cd $L ${docket}/cols_allfp.raw.gz | gzip -c > ${docket}/cols_allfp.raw.gz
 	"""
 }
 process trim_col_fingerprints {
