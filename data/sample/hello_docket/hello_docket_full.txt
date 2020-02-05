@@ -1,3 +1,6 @@
+# These are comment lines, included to test that functionality
+# implemented for skipping comment/header lines (based on a comment line
+# character) works correctly. Any comment line character can be specified.
 DOCKET will accelerate the work of researchers who
 develop Knowledge Providers by providing a domain-agnostic
 and researcher-driven solution to analyze
