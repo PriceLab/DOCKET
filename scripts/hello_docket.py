@@ -11,7 +11,7 @@ from docket.plugins.fingerprint import json2fp
 parser = argparse.ArgumentParser()
 
 # File IO arguments
-parser.add_argument('--file', help='Input file')
+parser.add_argument('--files', help='Input file')
 parser.add_argument('--out', help='Outfile base', default='output')
 
 # Fingerprint arguments
@@ -19,16 +19,27 @@ parser.add_argument('--L', help='Fingerprint length', default=100)
 parser.add_argument('--norm', help='Normalize', default=0)
 
 # File processing arguments
-parser.add_argument('--skip_rows', help='Rows to skip before reading data', default=0)
+parser.add_argument('--skip_rows', help='Rows to skip before reading data', default='#')
 parser.add_argument('--skip_cols', help='Columns to skip before reading data', default=0)
 parser.add_argument('--has_index', help='True if there are row labels', default=False)
 parser.add_argument('--has_header', help='True if there are column labels', default=False)
 
 args = parser.parse_args()
 
+
+# skip_rows can be an int (indicating number of skipped lines) or a
+# str (specifying a comment character for rows to skip)
+def is_integer(value):
+    try:
+        int(value)
+        return True
+    except ValueError:
+        return False
+
+
 docket_params = {
-    'files': args.file,
-    'skip_rows': int(args.skip_rows),
+    'files': args.files,
+    'skip_rows': int(args.skip_rows) if is_integer(args.skip_rows) else args.skip_rows,
     'skip_cols': int(args.skip_cols),
     'has_header': str(args.has_header).lower() in ('true', '1'),
     'has_index': str(args.has_index).lower() in ('true', '1')
@@ -63,14 +74,14 @@ for label, mdata in dm1.file_metadata.items():
     # Convenience function for generating fingerprints
     def encode_fp(encoder, data_sets):
         encodings = {}
-        for data_label, current_data in data_sets.items():
-            encoder.recurse_structure(current_data)
+        for data_label, data_ in data_sets.items():
+            encoder.recurse_structure(data_)
             encodings[data_label] = encoder.fp
             encoder.reset()
         return encodings
 
     # Calculate fingerprints
-    fp1 = json2fp.DataFingerprint(**{'length': 200})
+    fp1 = json2fp.DataFingerprint(**{'length': int(args.L)})
     fingerprints = encode_fp(fp1, json_data)
 
     # Convert to numpy array for analysis

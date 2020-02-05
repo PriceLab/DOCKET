@@ -12,6 +12,7 @@ import os
 import re
 import gzip
 import json
+import argparse
 
 
 # -------------------------------------------------------------------------
@@ -21,129 +22,139 @@ import json
 # specified pattern (will load only files with matching pattern)
 #
 # -------------------------------------------------------------------------
-def generate_file_list(path, pattern=None):
+def generate_file_list(file_path, pattern=None):
     file_list = []
-    if isinstance(path, list):
+    if isinstance(file_path, list):
         # Loop over items of list
-        for p in path:
+        for p in file_path:
             # Append file paths to list
             file_list += generate_file_list(p, pattern)
-    elif isinstance(path, str):
+    elif isinstance(file_path, str):
         # Recurse into folders
-        if os.path.isdir(path):
-            for p in os.listdir(path):
-                file_list += generate_file_list(f'{path}/{p}', pattern)
-        elif os.path.isfile(path):
+        if os.path.isdir(file_path):
+            for p in os.listdir(file_path):
+                file_list += generate_file_list(f'{file_path}/{p}', pattern)
+        elif os.path.isfile(file_path):
             if pattern:
                 match = None
                 try:
                     pattern = re.compile(pattern)
-                    match = pattern.search(path)
+                    match = pattern.search(file_path)
                 except re.error:
                     print(f'Invalid regular expression: {pattern}')
                 if match:
-                    file_list.append(path)
+                    file_list.append(file_path)
             else:
-                file_list.append(path)
+                file_list.append(file_path)
     return file_list
 
 
 # -------------------------------------------------------------------------
 # load_data
-# Load data from all files in the provided file list. To generate a file
-# list (for which the existence of all files has been confirmed) from a
-# mixed list of file and folder paths, first use generate_file_list
+# Load data from the specified file path.
 #
 # -------------------------------------------------------------------------
-def load_data(file_list, sep=None, skip_rows=0, skip_cols=0, has_header=False, has_index=False):
-    if file_list is None:
-        print("Invalid file provided")
-        return None
+def load_data(file_path, sep=None, skip_rows=None, skip_cols=0, has_header=False, has_index=False):
+    assert(isinstance(file_path, str))
 
-    # Make sure the input is a list
-    if isinstance(file_list, str):
-        file_list = [file_list]
+    # Get file extension
+    name, ext = os.path.splitext(file_path)
 
-    # Load file data and generate metadata
-    file_data = {}
-    file_metadata = {}
-    for file in file_list:
-        # Get file extension
-        name, ext = os.path.splitext(file)
+    # Unzip, if necessary
+    if ext == '.gz':
+        # data ends up in binary format
+        with gzip.open(file_path, 'r') as f:
+            data = f.read()
 
-        # Unzip, if necessary
-        if ext == '.gz':
-            # data ends up in binary format
-            with gzip.open(file, 'r') as f:
-                data = f.read()
+        # Now get the file type
+        name, ext = os.path.splitext(name)
 
-            # Now get the file type
-            name, ext = os.path.splitext(name)
+    # Otherwise, read file contents in binary format
+    else:
+        with open(file_path, 'rb') as f:
+            data = f.read()
 
-        # Otherwise, read file contents in binary format
-        else:
-            with open(file, 'rb') as f:
-                data = f.read()
+    # Read binary data with expected file format
+    data = json.loads(data) if ext == '.json' else data.decode()
 
-        # Get root of file name
-        name_root = os.path.basename(name)
+    # Split on line endings for convenience in subsequent processing
+    data = data.split('\n')
 
-        # Read binary data with expected file format
-        data = json.loads(data) if ext == '.json' else data.decode()
-
-        # Split on line endings for convenience in subsequent processing
-        data = data.split('\n')
-
-        # Save skipped lines and save column labels, if available
+    # Separate out skipped rows
+    if isinstance(skip_rows, str):
+        skipped_lines = [row for row in data if row.startswith(skip_rows)]
+        data = [row for row in data if not row.startswith(skip_rows)]
+    elif isinstance(skip_rows, int):
         skipped_lines = data[:skip_rows]
-        col_labels = data[skip_rows] if has_header and len(data) > skip_rows else ''
+        data = data[skip_rows:]
+    else:
+        skipped_lines = []
 
-        # Override specified separator if csv
-        if ext == '.csv':
-            sep = ','
+    # Save column labels, if available (using :1 prevents index error if data is [])
+    col_labels = data[:1] if has_header else ''
 
-        # Get data rows (i.e. non-skipped and non-header rows)
-        data = data[skip_rows+1:] if has_header else data[skip_rows:]
+    # Override specified separator if csv
+    if ext == '.csv':
+        sep = ','
 
-        # Generate default row labels
-        row_labels = [f'R{i}' for i in range(len(data))]
+    # Get data rows
+    if has_header:
+        data = data[1:]
 
-        if ext == '.json':
-            num_cols = 1
-            col_labels = [col_labels] if isinstance(col_labels, str) else []
+    # Generate default row labels
+    row_labels = [f'R{i}' for i in range(len(data))]
+
+    if ext == '.json':
+        num_cols = 1
+        col_labels = [col_labels] if isinstance(col_labels, str) else []
+    else:
+        # Split each row of data and get row labels if available
+        data = [row.split() if sep is None else row.split(sep) for row in data]
+        if has_index:
+            # Get row labels
+            row_labels = [row[skip_cols] if len(row) > skip_cols else f'R{i}' for i, row in enumerate(data)]
+
+        # Get data to the right of skipped columns
+        data = [row[skip_cols+1:] if has_index else row[skip_cols:] for row in data]
+
+        # Get number of items in each row
+        num_cols = [len(row) for row in data]
+        max_cols = max(num_cols) if len(num_cols) > 0 else 0
+
+        # Generate column labels
+        if has_header:
+            col_labels = col_labels.split() if sep is None else col_labels.split(sep)
+            diff = max_cols-len(col_labels)
+            col_labels = [f'C{i}' if i < diff else col_labels[i-max(0, diff)] for i in range(max_cols)]
         else:
-            # Split each row of data and get row labels if available
-            data = [row.split() if sep is None else row.split(sep) for row in data]
-            if has_index:
-                # Get row labels
-                row_labels = [row[skip_cols] if len(row) > skip_cols else f'R{i}' for i, row in enumerate(data)]
+            col_labels = [f'C{i}' for i in range(max_cols)]
 
-            # Get data to the right of skipped columns
-            data = [row[skip_cols+1:] if has_index else row[skip_cols:] for row in data]
+    # Generate metadata
+    metadata = dict()
+    metadata['file_path'] = file_path
+    metadata['file_type'] = ext
+    metadata['num_rows'] = len(data)
+    metadata['num_cols'] = num_cols
+    metadata['row_labels'] = row_labels
+    metadata['col_labels'] = col_labels
+    metadata['skipped_lines'] = skipped_lines
 
-            # Get number of items in each row
-            num_cols = [len(row) for row in data]
-            max_cols = max(num_cols) if len(num_cols) > 0 else 0
+    return data, metadata
 
-            # Generate column labels
-            if has_header:
-                col_labels = col_labels.split() if sep is None else col_labels.split(sep)
-                diff = max_cols-len(col_labels)
-                col_labels = [f'C{i}' if i < diff else col_labels[i-max(0, diff)] for i in range(max_cols)]
-            else:
-                col_labels = [f'C{i}' for i in range(max_cols)]
 
-        # Generate metadata
-        metadata = dict()
-        metadata['file_path'] = file
-        metadata['file_type'] = ext
-        metadata['num_rows'] = len(data)
-        metadata['num_cols'] = num_cols
-        metadata['row_labels'] = row_labels
-        metadata['col_labels'] = col_labels
-        metadata['skipped_lines'] = skipped_lines
+def main(file):
+    assert isinstance(file, str)
+    data, metadata = load_data(file, skip_rows='#')
+    print(json.dumps(data))
+    return json.dumps(data)
+    
 
-        file_data[name_root] = data
-        file_metadata[name_root] = metadata
+if __name__ == '__main__':
+    # Parse command-line inputs
+    load_parser = argparse.ArgumentParser()
 
-    return file_data, file_metadata
+    # File IO arguments
+    load_parser.add_argument('--source', help='File to load')
+    load_args = load_parser.parse_args()
+
+    main(load_args.source)
