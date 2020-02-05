@@ -3,10 +3,8 @@ $|=1;
 use strict;
 use JSON;
 
-my($storeddata, $direction, $outdir) = @ARGV;
-
-my $outfile = "$outdir/${direction}_hist.json";
-exit if -s "$outfile.gz";
+my($storeddata, $outfile) = @ARGV;
+exit if -s $outfile;
 
 my $json;
 open DATA, "gunzip -c $storeddata.gz |";
@@ -17,11 +15,7 @@ while (<DATA>) {
 close DATA;
 my $data = decode_json($json);
 my $ch = compute_content_histogram($data);
-
-open HIST, ">$outfile";
-print HIST to_json($ch);
-close HIST;
-`gzip -f $outfile`;
+print to_json($ch);
 
 
 sub compute_content_histogram {

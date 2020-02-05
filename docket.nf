@@ -8,6 +8,7 @@ params.fmt = 'table'
 params.docket = 'test_data.docket'
 params.L = 2000
 params.histL = 50
+params.minTriples = 10
 
 /* interpret parameters */
 input = file(params.infile)
@@ -21,8 +22,8 @@ histL = params.histL
 process ingest_file {
 	/* read the file, store contents as row-wise and column-wise json */
 	output:
-		val "${docket}/cols_data.json" into colsdata
-		val "${docket}/rows_data.json" into rowsdata
+		val "$docket/cols_data.json" into colsdata
+		val "$docket/rows_data.json" into rowsdata
 	"""
 	${dbin}/ingest.pl $input $fmt $docket
 	"""
@@ -35,33 +36,34 @@ process ingest_file {
 process column_histograms {
 	/* column-wise histograms of observed values */
 	input: val cd from colsdata
-	output: val "${docket}/cols_hist.json" into colshist
+	output: val "$docket/cols_hist.json" into colshist
 	"""
-	${dbin}/compute_hist.pl $cd cols $docket
+	$dbin/compute_hist.pl $cd $docket/cols_hist.json.gz | gzip -c > $docket/cols_hist.json.gz
 	"""
 }
 process compute_col_hist_fingerprints {
 	/* compute and serialize fingerprints of column-wise histograms of observed values */
 	input: val ch from colshist
-	output: val "${docket}/cols_hist_fp" into colshistfp
+	output: val "$docket/cols_hist_fp" into colshistfp
 	"""
-	${dbin}/compute_hist_fp.pl $ch cols $histL $docket
+	$dbin/compute_fp.pl $ch $histL $docket/cols_hist_fp.raw.gz | gzip -c > $docket/cols_hist_fp.raw.gz
+	$lphbin/serializeLPH.pl $docket/cols_hist_fp $histL 1 1 $docket/cols_hist_fp.raw.gz
 	"""
 }
 process PCA_col_hist_fingerprints {
 	/* compute PCA on fingerprints of column histograms */
 	/* ### issue: recomputes every time, will be slow for large data sets ### */
 	input: val chfp from colshistfp
-	output: val "${docket}/cols_hist_fp" into colshistfppca
+	output: val "$docket/cols_hist_fp" into colshistfppca
 	"""
-	${dbin}/pca.py ${chfp}.raw.gz --L $histL | gzip -c > ${chfp}.pca.gz
+	$dbin/pca.py ${chfp}.raw.gz --L $histL | gzip -c > ${chfp}.pca.gz
 	"""
 }
 process plot_PCA_col_hist_fingerprints {
 	/* plot PC1-PC2 on fingerprints of column histograms */
 	input: val chfp from colshistfppca
 	"""
-	${dbin}/plotpca.py ${chfp}.pca.gz ${chfp}.pc1_pc2.pdf
+	$dbin/plotpca.py ${chfp}.pca.gz ${chfp}.pc1_pc2.pdf
 	"""
 }
 process compare_col_hist_fingerprints {
@@ -69,16 +71,16 @@ process compare_col_hist_fingerprints {
 	/* ### issue: recomputes every time, will be slow for large data sets ### */
 	input: val chf from colshistfp
 	"""
-	${lphbin}/searchLPHs.pl $chf 0 1000000 ${chf}.aaa.hist | gzip -c > ${chf}.aaa.gz
+	$lphbin/searchLPHs.pl $chf 0 1000000 ${chf}.aaa.hist | gzip -c > ${chf}.aaa.gz
 	"""
 }
 process index_col_hist_fingerprints {
 	/* index fingerprints of column-wise histograms, using annoy */
 	/* ### issue: recomputes every time ### */
 	input: val chf from colshistfp
-	output: val "${docket}/cols_hist_fp" into colshistfpindex
+	output: val "$docket/cols_hist_fp" into colshistfpindex
 	"""
-	${dbin}/annoyIndexGz.py --file ${chf}.raw.gz --L $histL --norm 1 --out $chf
+	$dbin/annoyIndexGz.py --file ${chf}.raw.gz --L $histL --norm 1 --out $chf
 	"""
 }
 process KNN_col_hist_fingerprints {
@@ -86,7 +88,7 @@ process KNN_col_hist_fingerprints {
 	/* ### issue: recomputes every time ### */
 	input: val chf from colshistfpindex
 	"""
-	${dbin}/annoyQueryAll.py --index ${chf} --L $histL --k 100 | gzip -c > ${chf}.knn.gz
+	$dbin/annoyQueryAll.py --index $chf --L $histL --k 100 | gzip -c > ${chf}.knn.gz
 	"""
 }
 /* END SECTION: column histogram pipeline */
@@ -97,9 +99,9 @@ process KNN_col_hist_fingerprints {
 process row_histograms {
 	/* row-wise histograms of observed values */
 	input: val rd from rowsdata
-	output: val "${docket}/rows_hist.json" into rowshist
+	output: val "$docket/rows_hist.json" into rowshist
 	"""
-	${dbin}/compute_hist.pl $rd rows $docket
+	$dbin/compute_hist.pl $rd $docket/rows_hist.json.gz | gzip -c > $docket/rows_hist.json.gz
 	"""
 }
 /* END SECTION: row histogram pipeline */
@@ -110,25 +112,41 @@ process row_histograms {
 process compute_row_fingerprints {
 	/* row-wise fingerprints */
 	input: val rd from rowsdata
-	output: val "${docket}/rows_fp" into rowsfp
+	output: val "$docket/rows_allfp.raw.gz" into rowsallfp
 	"""
-	${dbin}/compute_fp.pl $rd rows $L $docket
+	$dbin/compute_fp.pl $rd $L $docket/rows_allfp.raw.gz | gzip -c > $docket/rows_allfp.raw.gz
+	"""
+}
+process trim_row_fingerprints {
+	/* trim row-wise fingerprints by triples */
+	input: val rfp from rowsallfp
+	output: val "$docket/rows_fp.raw.gz" into rowstrimfp
+	"""
+	$dbin/filterTable.pl $rfp 1 $params.minTriples | gzip -c > $docket/rows_fp.raw.gz
+	"""
+}
+process serialize_trim_row_fingerprints {
+	/* serialize trimmed row-wise fingerprints */
+	input: val rfp from rowstrimfp
+	output: val "$docket/rows_fp" into rowsfp
+	"""
+	$lphbin/serializeLPH.pl $docket/rows_fp $L 1 1 $rfp
 	"""
 }
 process PCA_row_fingerprints {
 	/* compute PCA on fingerprints of rows */
 	/* ### issue: recomputes every time, will be slow for large data sets ### */
 	input: val rfp from rowsfp
-	output: val "${docket}/rows_fp" into rowsfppca
+	output: val "$docket/rows_fp" into rowsfppca
 	"""
-	${dbin}/pca.py ${rfp}.raw.gz --L $L | gzip -c > ${rfp}.pca.gz
+	$dbin/pca.py ${rfp}.raw.gz --L $L | gzip -c > ${rfp}.pca.gz
 	"""
 }
 process plot_PCA_row_fingerprints {
 	/* plot PC1-PC2 on fingerprints of rows */
 	input: val rfp from rowsfppca
 	"""
-	${dbin}/plotpca.py ${rfp}.pca.gz ${rfp}.pc1_pc2.pdf
+	$dbin/plotpca.py ${rfp}.pca.gz ${rfp}.pc1_pc2.pdf
 	"""
 }
 process compare_row_fingerprints {
@@ -136,20 +154,18 @@ process compare_row_fingerprints {
 	/* ### issue: recomputes every time, will be slow for large data sets ### */
 	input: val rfp from rowsfp
 	
-	script:
-	if (1)
-		"""
-		${lphbin}/searchLPHs.pl $rfp 0 1000000 ${rfp}.aaa.hist | gzip -c > ${rfp}.aaa.gz
-		"""
+	"""
+	$lphbin/searchLPHs.pl $rfp 0 1000000 ${rfp}.aaa.hist | gzip -c > ${rfp}.aaa.gz
+	"""
 }
 process index_row_fingerprints {
 	/* index fingerprints of rows, using annoy */
 	/* ### issue: recomputes every time ### */
 	/* ### issue: pca.py doesn't expect gzipped input ### */
 	input: val rfp from rowsfp
-	output: val "${docket}/rows_fp" into rowsfpindex
+	output: val "$docket/rows_fp" into rowsfpindex
 	"""
-	${dbin}/annoyIndexGz.py --file ${rfp}.raw.gz --L $L --norm 1 --out $rfp
+	$dbin/annoyIndexGz.py --file ${rfp}.raw.gz --L $L --norm 1 --out $rfp
 	"""
 }
 process KNN_row_fingerprints {
@@ -157,7 +173,7 @@ process KNN_row_fingerprints {
 	/* ### issue: recomputes every time ### */
 	input: val rfp from rowsfpindex
 	"""
-	${dbin}/annoyQueryAll.py --index ${rfp} --L $L --k 100 | gzip -c > ${rfp}.knn.gz
+	$dbin/annoyQueryAll.py --index $rfp --L $L --k 100 | gzip -c > ${rfp}.knn.gz
 	"""
 }
 /* END SECTION: row analysis pipeline */
@@ -167,25 +183,41 @@ process KNN_row_fingerprints {
 process compute_col_fingerprints {
 	/* col-wise fingerprints */
 	input: val cd from colsdata
-	output: val "${docket}/cols_fp" into colsfp
+	output: val "$docket/cols_allfp.raw.gz" into colsallfp
 	"""
-	${dbin}/compute_fp.pl $cd cols $L $docket
+	$dbin/compute_fp.pl $cd $L $docket/cols_allfp.raw.gz | gzip -c > $docket/cols_allfp.raw.gz
+	"""
+}
+process trim_col_fingerprints {
+	/* trim col-wise fingerprints by triples */
+	input: val cfp from colsallfp
+	output: val "$docket/cols_fp.raw.gz" into colstrimfp
+	"""
+	$dbin/filterTable.pl $cfp 1 $params.minTriples | gzip -c > $docket/cols_fp.raw.gz
+	"""
+}
+process serialize_trim_col_fingerprints {
+	/* serialize trimmed col-wise fingerprints */
+	input: val cfp from colstrimfp
+	output: val "$docket/cols_fp" into colsfp
+	"""
+	$lphbin/serializeLPH.pl $docket/cols_fp $L 1 1 $cfp
 	"""
 }
 process PCA_col_fingerprints {
 	/* compute PCA on fingerprints of columns */
 	/* ### issue: recomputes every time, will be slow for large data sets ### */
 	input: val cfp from colsfp
-	output: val "${docket}/cols_fp" into colsfppca
+	output: val "$docket/cols_fp" into colsfppca
 	"""
-	${dbin}/pca.py ${cfp}.raw.gz --L $L | gzip -c > ${cfp}.pca.gz
+	$dbin/pca.py ${cfp}.raw.gz --L $L | gzip -c > ${cfp}.pca.gz
 	"""
 }
 process plot_PCA_col_fingerprints {
 	/* plot PC1-PC2 on fingerprints of columns */
 	input: val cfp from colsfppca
 	"""
-	${dbin}/plotpca.py ${cfp}.pca.gz ${cfp}.pc1_pc2.pdf
+	$dbin/plotpca.py ${cfp}.pca.gz ${cfp}.pc1_pc2.pdf
 	"""
 }
 process compare_col_fingerprints {
@@ -193,16 +225,16 @@ process compare_col_fingerprints {
 	/* ### issue: recomputes every time, will be slow for large data sets ### */
 	input: val cfp from colsfp
 	"""
-	${lphbin}/searchLPHs.pl $cfp 0 1000000 ${cfp}.aaa.hist | gzip -c > ${cfp}.aaa.gz
+	$lphbin/searchLPHs.pl $cfp 0 1000000 ${cfp}.aaa.hist | gzip -c > ${cfp}.aaa.gz
 	"""
 }
 process index_col_fingerprints {
 	/* index fingerprints of columns, using annoy */
 	/* ### issue: recomputes every time ### */
 	input: val cfp from colsfp
-	output: val "${docket}/cols_fp" into colsfpindex
+	output: val "$docket/cols_fp" into colsfpindex
 	"""
-	${dbin}/annoyIndexGz.py --file ${cfp}.raw.gz --L $L --norm 1 --out $cfp
+	$dbin/annoyIndexGz.py --file ${cfp}.raw.gz --L $L --norm 1 --out $cfp
 	"""
 }
 process KNN_col_fingerprints {
@@ -211,7 +243,7 @@ process KNN_col_fingerprints {
 	/* publishDir "$params.docket", mode: 'copy' */
 	input: val cfp from colsfpindex
 	"""
-	${dbin}/annoyQueryAll.py --index ${cfp} --L $L --k 100 | gzip -c > ${cfp}.knn.gz
+	$dbin/annoyQueryAll.py --index $cfp --L $L --k 100 | gzip -c > ${cfp}.knn.gz
 	"""
 }
 /* END SECTION: column analysis pipeline */
