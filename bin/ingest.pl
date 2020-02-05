@@ -14,7 +14,7 @@ my $info;
 if ($file_format eq 'xml') {
 	$info = read_xml($infile);
 } elsif ($file_format eq 'table') {
-	$info = read_tabular($infile, 1, 0, 0, 1); # 1 header line, default delimiter, id in column 0, skip 1 column
+	$info = read_tabular($infile, 1, 0, 0, 0); # 1 header line, default delimiter, id in column 0, skip 0 columns
 } elsif ($file_format eq 'rtable') {
 	$info = read_tabular($infile, 1, ' ', 0, 1); # 1 header line, space-delimited, id in column 0, skip 1 column
 } elsif ($file_format eq 'lol') {
