@@ -1,2 +1,2 @@
-numpy>=1.18.1
-Click==7.0
+annoy
+git+git://github.com/denisemauldin/data-fingerprints@tests_and_setup#egg=datafingerprint
