@@ -3,11 +3,8 @@ $|=1;
 use strict;
 use JSON;
 
-my($infile, $file_format, $outdir) = @ARGV;
-die unless $infile && $outdir;
-mkdir $outdir, 0755;
-
-exit if -s "$outdir/rows_data.json.gz" && -s "$outdir/cols_data.json.gz";
+my($infile, $file_format) = @ARGV;
+die unless $infile;
 
 $file_format ||= determine_format($infile);
 my $info;
@@ -23,15 +20,15 @@ if ($file_format eq 'xml') {
 	$info = read_xyz($infile, 1, ','); # 1 header line, comma-delimited
 }
 
-open ROWS, ">$outdir/rows_data.json";
+open ROWS, ">rows_data.json";
 print ROWS to_json($info->{'rowwise'});
 close ROWS;
 
-open COLS, ">$outdir/cols_data.json";
+open COLS, ">cols_data.json";
 print COLS to_json($info->{'colwise'});
 close COLS;
 
-`gzip -f $outdir/rows_data.json $outdir/cols_data.json`;
+`gzip -f rows_data.json cols_data.json`;
 
 ########
 sub determine_format { ###unfinished

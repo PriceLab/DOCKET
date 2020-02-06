@@ -6,15 +6,20 @@ use lib "/users/gglusman/proj/LPH/data-fingerprints/bin";
 use LIBLPH;
 my $lphbin = "/users/gglusman/proj/LPH/data-fingerprints/bin";
 
-my($storeddata, $L, $outfile) = @ARGV;
-exit if -s $outfile;
+my($storeddata, $L) = @ARGV;
 $L ||= 100;
 my $decimals = 3;
 my $normalize;
 
 
 my $json;
-open DATA, "gunzip -c $storeddata.gz |";
+if ($storeddata =~ /\.gz$/) {
+	open DATA, "gunzip -c $storeddata |";
+} elsif (-e "$storeddata.gz") {
+	open DATA, "gunzip -c $storeddata.gz |";
+} else {
+	open DATA, $storeddata;
+}
 while (<DATA>) {
 	chomp;
 	$json .= $_;
