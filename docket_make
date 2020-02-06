@@ -1,5 +1,5 @@
 #!/usr/bin/env nextflow
-dbin = "$baseDir/bin"
+dbin = "$baseDir/scripts"
 lphbin = "/users/gglusman/proj/LPH/data-fingerprints/bin"
 
 /* parameter defaults */
@@ -11,8 +11,6 @@ params.histL = 50
 params.minTriples = 10
 
 /* interpret parameters */
-input = file(params.infile)
-format = params.format
 docket = file(params.docket)
 L = params.L
 histL = params.histL
@@ -26,7 +24,7 @@ process ingest_file {
 		file 'cols_data.json.gz' into colsdata
 		file 'rows_data.json.gz' into rowsdata
 	"""
-	${dbin}/ingest.pl $input $format
+	${dbin}/ingest.pl $params.infile $params.format
 	"""
 }
 /* END SECTION: preparation */
