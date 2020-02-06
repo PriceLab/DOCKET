@@ -1,5 +1,5 @@
 import os
-import sys
+from docket import utilities
 from docket.maker import DocketMaker
 import docket.overview.transform as transform
 

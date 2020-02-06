@@ -9,6 +9,9 @@
 # https://www.python.org/dev/peps/pep-0008/#prescriptive-naming-conventions
 # -----------------------------------------------------------------------------
 
+from docket import utilities
+from docket.plugins import json2fp
+
 
 # -------------------------------------------------------------------------
 # pad_tabular_data
@@ -79,30 +82,26 @@ def tabular2json(data, row_labels, col_labels, by_col=False, pad_rows=True):
 
 # -------------------------------------------------------------------------
 # encode_fp
-# Encode data as fingerprint vectors. First use load_data, defined in
-# load.py. Then, pass data and metadata to this function. If by_row is
-# True, encode the rows as fingerprints. Otherwise, encode the columns.
+# Encode data as fingerprint vectors. Data are expected in a tabular json
+# format (dictionary of dictionaries). See description of tabular2json
+# function for details.
 #
 # -------------------------------------------------------------------------
-def encode_fp(data, metadata, by_col=False, pad_rows=True):
-    # Data and metadata are required to proceed
-    if data is None or metadata is None:
-        return {}
+def encode_fp(data_in, length):
+    # Check that data is in proper format
+    assert isinstance(data_in, dict)
+    for k, v in data_in.items():
+        assert isinstance(v, dict)
 
-    # For .json files, data should be joined
-    file_type = metadata['file_type']
-    if file_type == '.json':
-        json_data = '\n'.join(data)
-    # For tabular, make sure rows have same number of items (pad, if necessary)
-    else:
-        col_labels = metadata['col_labels']
+    # Check that length is an int or can be converted to an int
+    assert utilities.is_integer(length)
 
-        # Pad rows to have same number of items as column labels list
-        data = pad_tabular_data(data, pad_value='')
+    # Calculate fingerprints
+    fp_data = {}
+    dfp = json2fp.DataFingerprint(**{'length': int(length)})
+    for label, data in data_in.items():
+        dfp.recurse_structure(data)
+        fp_data[label] = dfp.fp
+        dfp.reset()
 
-    # Transform tabular data to json
-    json_data = tabular2json(data, metadata['row_labels'], metadata['col_labels'], by_col, pad_rows)
-
-    # TO-DO: CALL FINGERPRINT FUNCTION
-
-    return json_data
+    return fp_data
