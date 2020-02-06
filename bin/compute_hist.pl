@@ -3,11 +3,10 @@ $|=1;
 use strict;
 use JSON;
 
-my($storeddata, $outfile) = @ARGV;
-exit if -s $outfile;
+my($storeddata) = @ARGV;
 
 my $json;
-open DATA, "gunzip -c $storeddata.gz |";
+open DATA, "gunzip -c $storeddata |";
 while (<DATA>) {
 	chomp;
 	$json .= $_;
@@ -23,7 +22,11 @@ sub compute_content_histogram {
 	my %hist;
 	
 	while (my($id, $ref) = each %$what) {
-		$hist{$id}{$_}++ foreach values %$ref; ## modify to get rid of surrounding quotes, trimming numerical resolution, other cleanups
+		foreach (values %$ref) {
+			## modify to get rid of surrounding quotes, trimming numerical resolution, other cleanups
+			next unless $_;
+			$hist{$id}{$_}++;
+		}
 	}
 	return \%hist;
 }
