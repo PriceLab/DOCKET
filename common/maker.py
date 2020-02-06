@@ -10,8 +10,8 @@
 # -----------------------------------------------------------------------------
 
 import os
-import docket.overview.load as load
-import docket.overview.transform as transform
+import common.load as load
+import common.transform as transform
 
 
 class DocketMaker:

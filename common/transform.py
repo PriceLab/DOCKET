@@ -9,8 +9,8 @@
 # https://www.python.org/dev/peps/pep-0008/#prescriptive-naming-conventions
 # -----------------------------------------------------------------------------
 
-from docket import utilities
-from docket.plugins import json2fp
+import common.utilities as utilities
+import common.json2fp as json2fp
 
 
 # -------------------------------------------------------------------------

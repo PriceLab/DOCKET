@@ -1,6 +1,7 @@
 import json
 import argparse
-from docket.overview import load, transform
+import common.load as load
+import common.transform as transform
 
 
 def main(file, comment='//', rows_out='rows_out.json', cols_out='cols_out.json'):

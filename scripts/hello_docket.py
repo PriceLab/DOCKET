@@ -2,9 +2,9 @@ import argparse
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 
-import docket
-from docket import utilities
-from docket import transform
+import common.utilities as utilities
+import common.transform as transform
+from common.maker import DocketMaker
 
 parser = argparse.ArgumentParser()
 
@@ -32,7 +32,7 @@ docket_params = {
     'has_index': str(args.has_index).lower() in ('true', '1')
 }
 
-dm = docket.DocketMaker(**docket_params)
+dm = DocketMaker(**docket_params)
 data = dm.file_data
 
 for label, mdata in dm.file_metadata.items():
