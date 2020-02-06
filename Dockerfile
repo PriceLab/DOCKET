@@ -1,28 +1,21 @@
-FROM python:3.7-alpine3.11 as base
+FROM jupyter/scipy-notebook
 
-FROM base as builder
 USER root
 RUN mkdir /install
-RUN mkdir -p /install/lib/python3.7/site-packages
-WORKDIR /install
-ENV PYTHONPATH "${PYTHONPATH}:/install/lib/python3.7/site-packages"
+COPY requirements.txt /install
 
-COPY requirements.txt /install/requirements.txt
+# https://jupyter-docker-stacks.readthedocs.io/en/latest/using/selecting.html#jupyter-scipy-notebook
+# jupyter/scipy-notebook comes installed with gcc
+# pandas, matplotlib, scipy, seaborn, scikit-learn, cython, Click
+# uses apt-get to install system packages
+# uses conda to install python libraries
 
-# numpy requires Cython which requires gcc
-RUN apk add --no-cache --virtual .build-deps gcc musl-dev \
-&& pip install --target="/install" -r /install/requirements.txt \
-&& apk del .build-deps
-
-FROM base
-COPY --from=builder /install /usr/local
-
-COPY . /app
-WORKDIR /app
-ENV PYTHONPATH "${PYTHONPATH}:/usr/local/:/app"
-
-RUN apk add --no-cache openjdk8 bash git perl perl-json \
-&& pip install --upgrade  setuptools \
-&& pip install -r local_requirements.txt \
+RUN apt-get update && apt-get install -y openjdk-8-jdk libjson-perl \
+&& cpan install XML::Simple \
+&& pip install -r /install/requirements.txt \
 && wget -qO- https://get.nextflow.io | bash
 
+USER jovyan
+
+COPY ./app /app
+WORKDIR /app

@@ -3,12 +3,11 @@ services:
   docket:
     build: "."
     image: "docket-dev"
-    entrypoint: ['/bin/bash']
-    tty: true
-    stdin_open: true
     environment:
       DEBUG: 1
       PYTHONUNBUFFERED: 1
-      PYTHONPATH: '/usr/local:/app'
+      PYTHONPATH: '/app'
+    ports:
+      - 8888:8888
     volumes:
-      - ./:/app
+      - ./app:/app
