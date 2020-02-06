@@ -9,7 +9,7 @@
 # https://www.python.org/dev/peps/pep-0008/#prescriptive-naming-conventions
 # -----------------------------------------------------------------------------
 
-import json
+import os
 import docket.overview.load as load
 import docket.overview.transform as transform
 
@@ -49,12 +49,28 @@ class DocketMaker:
         # Generate filtered (if specified) file list
         self.file_list = load.generate_file_list(self.files, self.file_pattern) if 'files' in kwargs else None
         # Load file data and generate file metadata
-        self.file_data, self.file_metadata = load.load_data(self.file_list,
+        self.file_data, self.file_metadata = self.load_data(self.file_list,
                                                             sep=self.sep,
                                                             skip_rows=self.skip_rows,
                                                             skip_cols=self.skip_cols,
                                                             has_header=self.has_header,
                                                             has_index=self.has_index)
+
+    # Load data for multiple files
+    def load_data(self, file_list, sep=None, skip_rows=None, skip_cols=0, has_header=False, has_index=False):
+        file_data = {}
+        file_metadata = {}
+        for file in file_list:
+            data, metadata = load.load_data(file, sep, skip_rows, skip_cols, has_header, has_index)
+            # Get file name root
+            name, _ = os.path.splitext(metadata['file_path'])
+            label = os.path.basename(name)
+
+            # Store file data and metadata
+            file_data[label] = data
+            file_metadata[label] = metadata
+
+        return file_data, file_metadata
 
     # Return data set labels
     def data_labels(self):
