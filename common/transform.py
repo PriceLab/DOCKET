@@ -8,7 +8,6 @@
 # Naming conventions:
 # https://www.python.org/dev/peps/pep-0008/#prescriptive-naming-conventions
 # -----------------------------------------------------------------------------
-
 import common.utilities as utilities
 import common.json2fp as json2fp
 
@@ -74,7 +73,7 @@ def tabular2json(data, row_labels, col_labels, by_col=False, pad_rows=True):
             pad_size = max([len(row) for row in data])
             data = pad_tabular_data(data, pad_size, pad_value='')
 
-    second_level = [{k: v for k, v in list(zip(level2_labels, row))} for row in data]
+    second_level = [{k: v for k, v in list(zip(level2_labels, data[i]))} for i in range(len(level1_labels))]
     json_data = {level1_labels[i]: d for i, d in enumerate(second_level)}
 
     return json_data
