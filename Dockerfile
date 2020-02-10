@@ -12,10 +12,10 @@ COPY requirements.txt /install
 
 RUN apt-get update && apt-get install -y openjdk-8-jdk libjson-perl \
 && cpan install XML::Simple \
-&& pip install -r /install/requirements.txt \
-&& wget -qO- https://get.nextflow.io | bash
+&& pip install -r /install/requirements.txt
 
 USER jovyan
 
-COPY ./app /app
+RUN wget -qO- https://get.nextflow.io | bash
+COPY . /app
 WORKDIR /app
