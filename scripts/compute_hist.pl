@@ -1,4 +1,4 @@
-#!/local/bin/perl
+#!/bin/env perl
 $|=1;
 use strict;
 use JSON;
