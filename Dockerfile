@@ -1,4 +1,4 @@
-FROM jupyter/scipy-notebook
+FROM jupyter/scipy-notebook:3deefc7d16c7
 
 USER root
 RUN mkdir /install

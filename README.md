@@ -28,7 +28,29 @@ docker-compose up
 
 To connect to the DOCKET docker container:
 
-docker-compose exec docket bash
+  docker-compose exec docket bash
+
+
+## Nextflow
+
+Connect to the container and run:
+
+  ~/nextflow run hello_docket.nf
+
+## Python sample
+
+Connect to the container and run:
+
+  python scripts/hello_docket.py --files data/hello_docket.txt
+
+## Tests
+
+Connect to the container and run:
+
+  pip install -r common/tests/requirements.txt
+  python -m pytest common/tests
+
+
 
 ## Jupyter notebook
 
