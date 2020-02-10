@@ -1,2 +1,2 @@
-annoy
+annoy==1.16.3
 git+git://github.com/denisemauldin/data-fingerprints@tests_and_setup#egg=datafingerprint
