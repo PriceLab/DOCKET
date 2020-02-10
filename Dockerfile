@@ -10,12 +10,12 @@ COPY requirements.txt /install
 # uses apt-get to install system packages
 # uses conda to install python libraries
 
-RUN apt-get update && apt-get install -y openjdk-8-jdk libjson-perl \
-&& cpan install XML::Simple \
-&& pip install -r /install/requirements.txt
+RUN apt-get update && apt-get install -y openjdk-8-jdk libjson-perl
 
 USER jovyan
 
-RUN wget -qO- https://get.nextflow.io | bash
+RUN wget -qO- https://get.nextflow.io | bash \
+&& cpan install XML::Simple \
+&& pip install -r /install/requirements.txt
 COPY . /app
 WORKDIR /app
