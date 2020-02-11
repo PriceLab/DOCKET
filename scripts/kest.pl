@@ -172,16 +172,16 @@ unless (-e "$outdir/col_fp.pc1_pc2.png") {
 ########
 sub determine_format { ###unfinished
 	my($file) = @_;
-	
+
 	my $test = `file $file`;
 	return 'xml' if $test =~ /: XML/;
-	
+
 	return '?';
 }
 
 sub evaluate_types { ###unfinished
 	my($what) = @_;
-	
+
 	my(%allNil, %type, %mixed);
 	while (my($id1, $cargo) = each %$what) {
 		my(%votes, $n);
@@ -195,7 +195,7 @@ sub evaluate_types { ###unfinished
 			next;
 		}
 		delete $votes{'nil'};
-		
+
 		my @sorted = sort {$votes{$b}<=>$votes{$a}} keys %votes;
 		if (scalar keys %votes == 1) {
 			$type{$id1} = $sorted[0];
@@ -204,7 +204,7 @@ sub evaluate_types { ###unfinished
 				#my($avg, $std) = avgstd(\@values);
 				#print join("\t", $id1, $avg, $std), "\n";
 			}
-			
+
 		} else {
 			$mixed{$id1} = \@sorted;
 		}
@@ -216,7 +216,7 @@ sub evaluate_types { ###unfinished
 
 sub compute_fp {
 	my($what, $normalize, $where) = @_;
-	
+
 	open OF, ">$where";
 	foreach my $id (sort {$a<=>$b || $a cmp $b} keys %$what) {
 		$LPH->resetFingerprint();
@@ -228,7 +228,7 @@ sub compute_fp {
 		} else {
 			$fp = $LPH->{'fp'};
 		}
-		my @v;                                               
+		my @v;
 		push @v, @{$fp->{$_}} foreach sort {$a<=>$b} keys %$fp;
 		$id =~ s/[^A-Z0-9_\.\-\=,\+\*:;\@\^\`\|\~]+//gi;
 		print OF join("\t", $id, $LPH->{'statements'}, map {sprintf("%.${decimals}f", $_)} @v), "\n";
@@ -239,7 +239,7 @@ sub compute_fp {
 sub compute_content_histogram {
 	my($what) = @_;
 	my %hist;
-	
+
 	while (my($id, $ref) = each %$what) {
 		$hist{$id}{$_}++ foreach values %$ref; ## modify to get rid of surrounding quotes, trimming numerical resolution, other cleanups
 	}
@@ -248,11 +248,11 @@ sub compute_content_histogram {
 
 sub compute_chf {
 	my($what, $normalize, $where) = @_;
-	
+
 	my $CHF = new LIBLPH;
 	my $L = 50;
 	$CHF->{'L'} = $L;
-	
+
 	open OF, ">$where";
 	foreach my $id (sort {$a<=>$b || $a cmp $b} keys %$what) {
 		$CHF->resetFingerprint();
@@ -264,7 +264,7 @@ sub compute_chf {
 		} else {
 			$fp = $CHF->{'fp'};
 		}
-		my @v;                                               
+		my @v;
 		push @v, @{$fp->{$_}} foreach sort {$a<=>$b} keys %$fp;
 		$id =~ s/[^A-Z0-9_\.\-\=,\+\*:;\@\^\`\|\~]+//gi;
 		print OF join("\t", $id, $CHF->{'statements'}, map {sprintf("%.${decimals}f", $_)} @v), "\n";
@@ -274,16 +274,16 @@ sub compute_chf {
 
 sub compute_chf_old {
 	my($what, $normalize, $where) = @_;
-	
+
 	my $CHF = new LIBLPH;
 	my $L = 50;
 	$CHF->{'L'} = $L;
-	
+
 	open OF, ">$where";
 	foreach my $id (sort {$a<=>$b || $a cmp $b} keys %$what) {
 		my %hist;
 		$hist{$_}++ foreach values %{$what->{$id}}; ## modify to get rid of surrounding quotes
-		
+
 		$CHF->resetFingerprint();
 		$CHF->recurseStructure(\%hist);
 		next unless $CHF->{'statements'};
@@ -293,7 +293,7 @@ sub compute_chf_old {
 		} else {
 			$fp = $CHF->{'fp'};
 		}
-		my @v;                                               
+		my @v;
 		push @v, @{$fp->{$_}} foreach sort {$a<=>$b} keys %$fp;
 		$id =~ s/[^A-Z0-9_\.\-\=,\+\*:;\@\^\`\|\~]+//gi;
 		print OF join("\t", $id, $CHF->{'statements'}, map {sprintf("%.${decimals}f", $_)} @v), "\n";
@@ -303,7 +303,7 @@ sub compute_chf_old {
 
 sub correlate_all_pearson {
 	my($what, $where, $ids, $oids) = @_;
-	
+
 	open OF, ">$where";
 	my(%avg, %std, %v);
 	foreach my $id (@$ids) {
@@ -313,7 +313,7 @@ sub correlate_all_pearson {
 		$avg{$id} = $avg;
 		$std{$id} = $std;
 	}
-	
+
 	foreach my $i (0..$#$ids-1) {
 		my $id1 = $ids->[$i];
 		#$id1 =~ s/[^A-Z0-9_\.\-\=,\+\*:;\@\^\`\|\~]+//gi;
@@ -330,7 +330,7 @@ sub correlate_all_pearson {
 
 sub correlate_all_spearman {
 	my($what, $where, $ids, $oids) = @_;
-	
+
 	open OF, ">$where";
 	my(%avg, %std, %v);
 	foreach my $id (@$ids) {
@@ -340,7 +340,7 @@ sub correlate_all_spearman {
 		$avg{$id} = $avg;
 		$std{$id} = $std;
 	}
-	
+
 	foreach my $i (0..$#$ids-1) {
 		my $id1 = $ids->[$i];
 		#$id1 =~ s/[^A-Z0-9_\.\-\=,\+\*:;\@\^\`\|\~]+//gi;
@@ -359,13 +359,13 @@ sub read_tabular {
 	my($infile, $headerLines, $delimiter, $idcol, $skipcols) = @_;
 	my(@headers, @names, @colHist, $rows, %colwise, %rowwise, $id);
 	$delimiter ||= "\t";
-	
+
 	if ($infile =~ /\.gz$/) {
 		open INF, "gunzip -c $infile |";
 	} else {
 		open INF, $infile;
 	}
-	
+
 	foreach my $i (1..$headerLines) {
 		$_ = <INF>;
 		chomp;
@@ -373,12 +373,12 @@ sub read_tabular {
 		my(@v) = split $delimiter;
 		push @headers, \@v;
 	}
-	
+
 	while (<INF>) {
 		chomp;
 		s/\r//g;
 		my(@v) = split $delimiter;
-		
+
 		unless (@names) {
 			if (defined $headers[0]) {
 				@names = @{$headers[0]};
@@ -389,7 +389,7 @@ sub read_tabular {
 				@names = map {"col_$_"} (0..$#v);
 			}
 		}
-		
+
 		$colHist[scalar @v]++;
 		$rows++;
 		$id = $v[$idcol];
@@ -412,20 +412,20 @@ sub read_lol { # list of lists
 	my($infile, $headerLines, $delimiter, $idcol, $skipcols) = @_;
 	my(@headers, @colHist, $rows, %colwise, %rowwise, $id);
 	$delimiter ||= "\t";
-	
+
 	if ($infile =~ /\.gz$/) {
 		open INF, "gunzip -c $infile |";
 	} else {
 		open INF, $infile;
 	}
-	
+
 	foreach my $i (1..$headerLines) {
 		$_ = <INF>;
 		chomp;
 		my(@v) = split $delimiter;
 		push @headers, \@v;
 	}
-	
+
 	while (<INF>) {
 		chomp;
 		my(@v) = split $delimiter;
@@ -451,20 +451,20 @@ sub read_xyz { # row-col-value triples
 	my($infile, $headerLines, $delimiter) = @_;
 	my(@headers, @colHist, $rows, %colwise, %rowwise, $id, $attr, $v);
 	$delimiter ||= "\t";
-	
+
 	if ($infile =~ /\.gz$/) {
 		open INF, "gunzip -c $infile |";
 	} else {
 		open INF, $infile;
 	}
-	
+
 	foreach my $i (1..$headerLines) {
 		$_ = <INF>;
 		chomp;
 		my(@v) = split $delimiter;
 		push @headers, \@v;
 	}
-	
+
 	while (<INF>) {
 		chomp;
 		my(@v) = split $delimiter;
@@ -486,11 +486,11 @@ sub read_xyz { # row-col-value triples
 sub read_xml { ###unfinished
 	my($infile, $idcol) = @_;
 	my(@headers, @colHist, $rows, @votes, %colwise, %rowwise, $id);
-	
+
 	my $content = XMLin($infile, ForceArray => 0, KeyAttr => 1);
 	$content = $content->{'GENESET'}; ### specific
 	print join("\t", %{$content->{'GENESET'}[0]}), "\n";
-	
+
 	exit;
 	while (<INF>) {
 		chomp;
@@ -503,7 +503,7 @@ sub read_xml { ###unfinished
 			$colwise{$headers[0][$col]}{$id} = $rowwise{$id}{$headers[0][$col]} = $v;
 		}
 	}
-	
+
 	close INF;
 	return {
 		'headers' => \@headers,
@@ -516,7 +516,7 @@ sub read_xml { ###unfinished
 
 sub test_type { ###unfinished, should understand dates
 	my($v) = @_;
-	
+
 	my $type = 'str';
 	if (!$v) {
 		$type = 'nil';
