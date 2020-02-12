@@ -1,4 +1,4 @@
-#!/usr/bin/env nextflow
+#!/bin/env nextflow
 pyscripts = "$baseDir/scripts"
 
 /* Parameter defaults */

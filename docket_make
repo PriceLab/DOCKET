@@ -1,6 +1,5 @@
-#!/usr/bin/env nextflow
+#!/bin/env nextflow
 dbin = "$baseDir/scripts"
-lphbin = "/users/gglusman/proj/LPH/data-fingerprints/bin"
 
 /* parameter defaults */
 params.infile = 'test_data.txt'
@@ -49,7 +48,7 @@ process compute_col_hist_fingerprints {
 	output: file 'cols_hist_fp.fp' into colshistfpser
 	"""
 	$dbin/compute_fp.pl $ch $histL | gzip -c > cols_hist_fp.raw.gz
-	$lphbin/serializeLPH.pl cols_hist_fp $histL 1 1 cols_hist_fp.raw.gz
+	serializeLPH.pl cols_hist_fp $histL 1 1 cols_hist_fp.raw.gz
 	"""
 }
 process PCA_col_hist_fingerprints {
@@ -77,7 +76,7 @@ process compare_col_hist_fingerprints {
 	output: file 'cols_hist_fp.aaa.gz' into chfaaa
 	output: file 'cols_hist_fp.aaa.hist' into chfaaahist
 	"""
-	$lphbin/searchLPHs.pl $chf 0 1000000 cols_hist_fp.aaa.hist | gzip -c > cols_hist_fp.aaa.gz
+	searchLPHs.pl $chf 0 1000000 cols_hist_fp.aaa.hist | gzip -c > cols_hist_fp.aaa.gz
 	"""
 }
 process index_col_hist_fingerprints {
@@ -144,7 +143,7 @@ process serialize_trim_row_fingerprints {
 	output: file 'rows_fp.fp' into rowsfp
 	output: file 'rows_fp.id' into rowsfpids
 	"""
-	$lphbin/serializeLPH.pl rows_fp $L 1 1 $rfp
+	serializeLPH.pl rows_fp $L 1 1 $rfp
 	"""
 }
 process PCA_row_fingerprints {
@@ -172,7 +171,7 @@ process compare_row_fingerprints {
 	output: file 'rows_fp.aaa.gz' into rowsaaa
 	output: file 'rows_fp.aaa.hist' into rowsaaahist
 	"""
-	$lphbin/searchLPHs.pl $rfp 0 1000000 rows_fp.aaa.hist | gzip -c > rows_fp.aaa.gz
+	searchLPHs.pl $rfp 0 1000000 rows_fp.aaa.hist | gzip -c > rows_fp.aaa.gz
 	"""
 }
 process index_row_fingerprints {
@@ -224,7 +223,7 @@ process serialize_trim_col_fingerprints {
 	output: file 'cols_fp.fp' into colsfp
 	output: file 'cols_fp.id' into colsfpids
 	"""
-	$lphbin/serializeLPH.pl cols_fp $L 1 1 $cfp
+	serializeLPH.pl cols_fp $L 1 1 $cfp
 	"""
 }
 process PCA_col_fingerprints {
@@ -252,7 +251,7 @@ process compare_col_fingerprints {
 	output: file 'cols_fp.aaa.gz' into colsaaa
 	output: file 'cols_fp.aaa.hist' into colsaaahist
 	"""
-	$lphbin/searchLPHs.pl $cfp 0 1000000 cols_fp.aaa.hist | gzip -c > cols_fp.aaa.gz
+	searchLPHs.pl $cfp 0 1000000 cols_fp.aaa.hist | gzip -c > cols_fp.aaa.gz
 	"""
 }
 process index_col_fingerprints {

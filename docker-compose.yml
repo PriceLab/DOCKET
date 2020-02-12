@@ -1,0 +1,13 @@
+version: "2.1"
+services:
+  docket:
+    build: "."
+    image: "docket-dev"
+    environment:
+      DEBUG: 1
+      PYTHONUNBUFFERED: 1
+      PYTHONPATH: '/app'
+    ports:
+      - 8888:8888
+    volumes:
+      - ./:/app
