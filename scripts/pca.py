@@ -26,6 +26,10 @@ for i in range(0, len(X)):
     X[i] = stats.zscore(X[i])
 
 # compute PCA
+if c>L:
+    c = L
+if c>len(names):
+    c = len(names)
 pca = PCA(n_components=c)
 pca.fit(X)
 Y = pca.transform(X)

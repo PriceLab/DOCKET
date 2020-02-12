@@ -8,9 +8,10 @@ params.format = 'table'
 params.docket = 'test_data.docket'
 params.L = 2000
 params.histL = 50
-params.minTriples = 10
+params.minTriples = 1
 
 /* interpret parameters */
+infile = file(params.infile)
 docket = file(params.docket)
 L = params.L
 histL = params.histL
@@ -20,11 +21,12 @@ histL = params.histL
 process ingest_file {
 	/* read the file, store contents as row-wise and column-wise json */
 	publishDir docket, mode: 'copy'
+	input: file infile
 	output:
 		file 'cols_data.json.gz' into colsdata
 		file 'rows_data.json.gz' into rowsdata
 	"""
-	${dbin}/ingest.pl $params.infile $params.format
+	${dbin}/ingest-all-multi.pl $params.infile $params.format
 	"""
 }
 /* END SECTION: preparation */

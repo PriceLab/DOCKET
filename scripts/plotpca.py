@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 parser=argparse.ArgumentParser()
 parser.add_argument('infile', nargs='?', default=sys.stdin, help='File with PCA values')
 parser.add_argument('outfile', nargs='?', default=sys.stdin, help='Where to save the plot')
-parser.add_argument('--components', help='Number of components', default=10)
+parser.add_argument('--components', help='Number of components', default=2)
 parser.add_argument('--c1', help='First component (x axis)', default=0)
 parser.add_argument('--c2', help='Second component (y axis)', default=1)
 args=parser.parse_args()
