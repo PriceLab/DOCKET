@@ -9,7 +9,7 @@
 # https://www.python.org/dev/peps/pep-0008/#prescriptive-naming-conventions
 # -----------------------------------------------------------------------------
 import common.utilities as utilities
-import common.json2fp as json2fp
+from datafingerprint import DataFingerprint
 
 
 # -------------------------------------------------------------------------
@@ -97,7 +97,7 @@ def encode_fp(data_in, length):
 
     # Calculate fingerprints
     fp_data = {}
-    dfp = json2fp.DataFingerprint(**{'length': int(length)})
+    dfp = DataFingerprint(**{'length': int(length)})
     for label, data in data_in.items():
         dfp.recurse_structure(data)
         fp_data[label] = dfp.fp

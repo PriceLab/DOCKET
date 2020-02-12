@@ -33,10 +33,10 @@ close COLS;
 ########
 sub determine_format { ###unfinished
 	my($file) = @_;
-	
+
 	my $test = `file $file`;
 	return 'xml' if $test =~ /: XML/;
-	
+
 	return '?';
 }
 
@@ -45,13 +45,13 @@ sub read_tabular {
 	my($infile, $headerLines, $delimiter, $idcol, $skipcols) = @_;
 	my(@headers, @names, @colHist, $rows, %colwise, %rowwise, $id);
 	$delimiter ||= "\t";
-	
+
 	if ($infile =~ /\.gz$/) {
 		open INF, "gunzip -c $infile |";
 	} else {
 		open INF, $infile;
 	}
-	
+
 	foreach my $i (1..$headerLines) {
 		while (<INF>) {
 			next if /^#/;
@@ -62,12 +62,12 @@ sub read_tabular {
 		my(@v) = split $delimiter;
 		push @headers, \@v;
 	}
-	
+
 	while (<INF>) {
 		chomp;
 		s/\r//g;
 		my(@v) = split $delimiter;
-		
+
 		unless (@names) {
 			if (defined $headers[0]) {
 				@names = @{$headers[0]};
@@ -78,7 +78,7 @@ sub read_tabular {
 				@names = map {"col_$_"} (0..$#v);
 			}
 		}
-		
+
 		$colHist[scalar @v]++;
 		$rows++;
 		$id = $v[$idcol];
@@ -101,20 +101,20 @@ sub read_lol { # list of lists
 	my($infile, $headerLines, $delimiter, $idcol, $skipcols) = @_;
 	my(@headers, @colHist, $rows, %colwise, %rowwise, $id);
 	$delimiter ||= "\t";
-	
+
 	if ($infile =~ /\.gz$/) {
 		open INF, "gunzip -c $infile |";
 	} else {
 		open INF, $infile;
 	}
-	
+
 	foreach my $i (1..$headerLines) {
 		$_ = <INF>;
 		chomp;
 		my(@v) = split $delimiter;
 		push @headers, \@v;
 	}
-	
+
 	while (<INF>) {
 		chomp;
 		my(@v) = split $delimiter;
@@ -140,20 +140,20 @@ sub read_xyz { # row-col-value triples
 	my($infile, $headerLines, $delimiter) = @_;
 	my(@headers, @colHist, $rows, %colwise, %rowwise, $id, $attr, $v);
 	$delimiter ||= "\t";
-	
+
 	if ($infile =~ /\.gz$/) {
 		open INF, "gunzip -c $infile |";
 	} else {
 		open INF, $infile;
 	}
-	
+
 	foreach my $i (1..$headerLines) {
 		$_ = <INF>;
 		chomp;
 		my(@v) = split $delimiter;
 		push @headers, \@v;
 	}
-	
+
 	while (<INF>) {
 		chomp;
 		my(@v) = split $delimiter;
@@ -175,11 +175,11 @@ sub read_xyz { # row-col-value triples
 sub read_xml { ###unfinished
 	my($infile, $idcol) = @_;
 	my(@headers, @colHist, $rows, @votes, %colwise, %rowwise, $id);
-	
+
 	my $content = XMLin($infile, ForceArray => 0, KeyAttr => 1);
 	$content = $content->{'GENESET'}; ### specific
 	print join("\t", %{$content->{'GENESET'}[0]}), "\n";
-	
+
 	exit;
 	while (<INF>) {
 		chomp;
@@ -192,7 +192,7 @@ sub read_xml { ###unfinished
 			$colwise{$headers[0][$col]}{$id} = $rowwise{$id}{$headers[0][$col]} = $v;
 		}
 	}
-	
+
 	close INF;
 	return {
 		'headers' => \@headers,

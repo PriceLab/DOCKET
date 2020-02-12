@@ -20,7 +20,7 @@ print to_json($ch);
 sub compute_content_histogram {
 	my($what) = @_;
 	my %hist;
-	
+
 	while (my($id, $ref) = each %$what) {
 		foreach (values %$ref) {
 			## modify to get rid of surrounding quotes, trimming numerical resolution, other cleanups
