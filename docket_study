@@ -6,7 +6,7 @@ lphbin = "/users/gglusman/proj/LPH/data-fingerprints/bin"
 params.infile = 'test_data.txt'
 params.format = 'table'
 params.docket = 'test_data.docket'
-params.L = 100
+params.L = 500
 params.histL = 50
 params.minTriples = 1
 
@@ -47,11 +47,11 @@ process compute_col_hist_fingerprints {
 	/* compute and serialize fingerprints of column-wise histograms of observed values */
 	publishDir docket, mode: 'copy'
 	input: file ch from colshist
-	output: file 'cols_hist_fp.raw.gz' into colshistfp
+	output: file 'cols_hist_fp.cent.gz' into colshistfp
 	output: file 'cols_hist_fp.fp' into colshistfpser
 	"""
-	$dbin/compute_fp.pl $ch $histL | gzip -c > cols_hist_fp.raw.gz
-	$lphbin/serializeLPH.pl cols_hist_fp $histL 1 1 cols_hist_fp.raw.gz
+	$dbin/compute_fp.pl $ch $histL | $dbin/center_fp.pl | gzip -c > cols_hist_fp.cent.gz
+	$lphbin/serializeLPH.pl cols_hist_fp $histL 1 0 cols_hist_fp.cent.gz
 	"""
 }
 process PCA_col_hist_fingerprints {
@@ -139,20 +139,29 @@ process trim_row_fingerprints {
 	$dbin/filterTable.pl $rfp 1 $params.minTriples | gzip -c > rows_fp.raw.gz
 	"""
 }
-process serialize_trim_row_fingerprints {
-	/* serialize trimmed row-wise fingerprints */
+process center_row_fingerprints {
+	/* center row-wise fingerprints */
 	publishDir docket, mode: 'copy'
 	input: file rfp from rowstrimfp
+	output: file 'rows_fp.cent.gz' into rowscentfp
+	"""
+	gunzip -c $rfp | $dbin/center_fp.pl | gzip -c > rows_fp.cent.gz
+	"""
+}
+process serialize_cent_row_fingerprints {
+	/* serialize centered row-wise fingerprints */
+	publishDir docket, mode: 'copy'
+	input: file rfp from rowscentfp
 	output: file 'rows_fp.fp' into rowsfp
 	output: file 'rows_fp.id' into rowsfpids
 	"""
-	$lphbin/serializeLPH.pl rows_fp $L 1 1 $rfp
+	$lphbin/serializeLPH.pl rows_fp $L 1 0 $rfp
 	"""
 }
 process PCA_row_fingerprints {
 	/* compute PCA on fingerprints of rows */
 	publishDir docket, mode: 'copy'
-	input: file rfp from rowstrimfp
+	input: file rfp from rowscentfp
 	output: file 'rows_fp.pca.gz' into rowsfppca
 	"""
 	$dbin/pca.py $rfp --L $L | gzip -c > rows_fp.pca.gz
@@ -180,7 +189,7 @@ process compare_row_fingerprints {
 process index_row_fingerprints {
 	/* index fingerprints of rows, using annoy */
 	publishDir docket, mode: 'copy'
-	input: file rfp from rowstrimfp
+	input: file rfp from rowscentfp
 	output: file 'rows_fp.tree' into rowsfpindex
 	output: file 'rows_fp.names' into rowsfpnames
 	"""
@@ -219,10 +228,19 @@ process trim_col_fingerprints {
 	$dbin/filterTable.pl $cfp 1 $params.minTriples | gzip -c > cols_fp.raw.gz
 	"""
 }
-process serialize_trim_col_fingerprints {
-	/* serialize trimmed col-wise fingerprints */
+process center_col_fingerprints {
+	/* center col-wise fingerprints */
 	publishDir docket, mode: 'copy'
 	input: file cfp from colstrimfp
+	output: file 'cols_fp.cent.gz' into colscentfp
+	"""
+	gunzip -c $cfp | $dbin/center_fp.pl | gzip -c > cols_fp.cent.gz
+	"""
+}
+process serialize_cent_col_fingerprints {
+	/* serialize centered col-wise fingerprints */
+	publishDir docket, mode: 'copy'
+	input: file cfp from colscentfp
 	output: file 'cols_fp.fp' into colsfp
 	output: file 'cols_fp.id' into colsfpids
 	"""
@@ -232,7 +250,7 @@ process serialize_trim_col_fingerprints {
 process PCA_col_fingerprints {
 	/* compute PCA on fingerprints of columns */
 	publishDir docket, mode: 'copy'
-	input: file cfp from colstrimfp
+	input: file cfp from colscentfp
 	output: file 'cols_fp.pca.gz' into colsfppca
 	"""
 	$dbin/pca.py $cfp --L $L | gzip -c > cols_fp.pca.gz
@@ -260,7 +278,7 @@ process compare_col_fingerprints {
 process index_col_fingerprints {
 	/* index fingerprints of columns, using annoy */
 	publishDir docket, mode: 'copy'
-	input: file cfp from colstrimfp
+	input: file cfp from colscentfp
 	output: file 'cols_fp.tree' into colsfpindex
 	output: file 'cols_fp.names' into colsfpnames
 	"""
