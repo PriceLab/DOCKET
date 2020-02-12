@@ -2,9 +2,7 @@
 $|=1;
 use strict;
 use JSON;
-use lib "/users/gglusman/proj/LPH/data-fingerprints/bin";
 use LIBLPH;
-my $lphbin = "/users/gglusman/proj/LPH/data-fingerprints/bin";
 
 my($storeddata, $L) = @ARGV;
 $L ||= 100;
