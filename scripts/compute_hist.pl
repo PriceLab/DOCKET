@@ -20,7 +20,7 @@ print to_json($ch);
 sub compute_content_histogram {
 	my($what) = @_;
 	my %hist;
-	
+
 	while (my($id, $ref) = each %$what) {
 		foreach my $value (values %$ref) {
 			next unless $value;
