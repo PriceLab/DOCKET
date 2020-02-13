@@ -47,11 +47,14 @@ process compute_col_hist_fingerprints {
 	/* compute and serialize fingerprints of column-wise histograms of observed values */
 	publishDir docket, mode: 'copy'
 	input: file ch from colshist
-	output: file 'cols_hist_fp.cent.gz' into colshistfp
+	output: file 'cols_hist_fp.trim.gz' into colshistfp
 	output: file 'cols_hist_fp.fp' into colshistfpser
+	output: file 'cols_hist_fp.id' into colshistfpserids
+	/* $dbin/compute_fp.pl $ch $histL | $dbin/center_fp.pl | gzip -c > cols_hist_fp.cent.gz */
 	"""
-	$dbin/compute_fp.pl $ch $histL | $dbin/center_fp.pl | gzip -c > cols_hist_fp.cent.gz
-	$lphbin/serializeLPH.pl cols_hist_fp $histL 1 0 cols_hist_fp.cent.gz
+	$dbin/compute_fp.pl $ch $histL | gzip -c > cols_hist_fp.raw.gz
+	$dbin/filterTable.pl cols_hist_fp.raw.gz 1 $params.minTriples | gzip -c > cols_hist_fp.trim.gz
+	$lphbin/serializeLPH.pl cols_hist_fp $histL 1 1 cols_hist_fp.trim.gz
 	"""
 }
 process PCA_col_hist_fingerprints {

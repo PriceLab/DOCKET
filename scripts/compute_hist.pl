@@ -14,7 +14,7 @@ while (<DATA>) {
 close DATA;
 my $data = decode_json($json);
 my $ch = compute_content_histogram($data);
-print to_json($ch);
+print to_json($ch, {pretty=>1});
 
 
 sub compute_content_histogram {

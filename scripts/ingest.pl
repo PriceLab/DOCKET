@@ -23,11 +23,11 @@ if ($file_format eq 'xml') {
 }
 
 open ROWS, ">rows_data.json";
-print ROWS to_json($info->{'rowwise'});
+print ROWS to_json($info->{'rowwise'}, {pretty=>1});
 close ROWS;
 
 open COLS, ">cols_data.json";
-print COLS to_json($info->{'colwise'});
+print COLS to_json($info->{'colwise'}, {pretty=>1});
 close COLS;
 
 `gzip -f rows_data.json cols_data.json`;
