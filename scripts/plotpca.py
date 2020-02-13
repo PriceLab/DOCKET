@@ -28,5 +28,7 @@ Y = np.genfromtxt(fname = infile, dtype='float', usecols = range(1, c+1))
 # plot
 tp = np.array(Y).transpose()
 plt.figure()
-plt.scatter(tp[c1],tp[c2],color='black',marker='.',s=1)
+if len(names)>3:
+    plt.scatter(tp[c1],tp[c2],color='black',marker='.',s=1)
+
 plt.savefig(outfile)
