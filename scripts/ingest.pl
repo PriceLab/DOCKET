@@ -3,7 +3,7 @@ $|=1;
 use strict;
 use JSON;
 
-my($infile, $file_format) = @ARGV;
+my($infile, $file_format, $skipDuplicates) = @ARGV;
 die unless $infile;
 
 $file_format ||= determine_format($infile);
@@ -23,11 +23,11 @@ if ($file_format eq 'xml') {
 }
 
 open ROWS, ">rows_data.json";
-print ROWS to_json($info->{'rowwise'});
+print ROWS to_json($info->{'rowwise'}, {pretty=>1});
 close ROWS;
 
 open COLS, ">cols_data.json";
-print COLS to_json($info->{'colwise'});
+print COLS to_json($info->{'colwise'}, {pretty=>1});
 close COLS;
 
 `gzip -f rows_data.json cols_data.json`;
@@ -82,10 +82,12 @@ sub read_tabular {
 				@names = map {"col_$_"} (0..$#v);
 			}
 		}
-
+		
+		$id = $v[$idcol];
+		next if $skipDuplicates && defined $rowwise{$id};
+		
 		$colHist[scalar @v]++;
 		$rows++;
-		$id = $v[$idcol];
 		foreach my $col ($skipcols..$#v) {
 			my $v = $v[$col];
 			$colwise{$names[$col]}{$id} = $rowwise{$id}{$names[$col]} = $v;

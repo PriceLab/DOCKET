@@ -1,11 +1,11 @@
 #!/usr/bin/env nextflow
 dbin = "$baseDir/scripts"
-lphbin = "/users/gglusman/proj/LPH/data-fingerprints/bin"
+lphbin = "$baseDir/data-fingerprints"
 
 /* parameter defaults */
-params.infile = 'test/test_data.txt'
+params.infile = "$baseDir/test/test_data.txt"
 params.format = 'table'
-params.docket = 'test/test_data.docket'
+params.docket = "$baseDir/test/test_data.docket"
 params.L = 500
 params.histL = 50
 params.minTriples = 1
@@ -20,13 +20,14 @@ histL = params.histL
 /* SECTION: preparation */
 process ingest_file {
 	/* read the file, store contents as row-wise and column-wise json */
-	publishDir docket, mode: 'copy'
+	/* temporary: keeping only the first instance (row) for each id */
+	publishDir "$docket/data", mode: 'copy'
 	input: file infile
 	output:
 		file 'cols_data.json.gz' into colsdata
 		file 'rows_data.json.gz' into rowsdata
 	"""
-	${dbin}/ingest.pl $params.infile $params.format
+	${dbin}/ingest.pl $params.infile $params.format 1
 	"""
 }
 /* END SECTION: preparation */
@@ -36,7 +37,7 @@ process ingest_file {
 /* SECTION: column histogram pipeline */
 process column_histograms {
 	/* column-wise histograms of observed values */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/data", mode: 'copy'
 	input: file cd from colsdata
 	output: file 'cols_hist.json.gz' into colshist
 	"""
@@ -45,18 +46,20 @@ process column_histograms {
 }
 process compute_col_hist_fingerprints {
 	/* compute and serialize fingerprints of column-wise histograms of observed values */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file ch from colshist
-	output: file 'cols_hist_fp.cent.gz' into colshistfp
+	output: file 'cols_hist_fp.trim.gz' into colshistfp
 	output: file 'cols_hist_fp.fp' into colshistfpser
+	output: file 'cols_hist_fp.id' into colshistfpserids
 	"""
-	$dbin/compute_fp.pl $ch $histL | $dbin/center_fp.pl | gzip -c > cols_hist_fp.cent.gz
-	$lphbin/serializeLPH.pl cols_hist_fp $histL 1 0 cols_hist_fp.cent.gz
+	$dbin/compute_fp.pl $ch $histL | gzip -c > cols_hist_fp.raw.gz
+	$dbin/filterTable.pl cols_hist_fp.raw.gz 1 $params.minTriples | gzip -c > cols_hist_fp.trim.gz
+	$lphbin/serializeLPH.pl cols_hist_fp $histL 1 1 cols_hist_fp.trim.gz
 	"""
 }
 process PCA_col_hist_fingerprints {
 	/* compute PCA on fingerprints of column histograms */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/analyses", mode: 'copy'
 	input: file chfp from colshistfp
 	output: file 'cols_hist_fp.pca.gz' into colshistfppca
 	"""
@@ -65,7 +68,7 @@ process PCA_col_hist_fingerprints {
 }
 process plot_PCA_col_hist_fingerprints {
 	/* plot PC1-PC2 on fingerprints of column histograms */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/visualizations", mode: 'copy'
 	input: file chfp from colshistfppca
 	output: file 'cols_hist_fp.pc1_pc2.pdf'
 	"""
@@ -74,7 +77,7 @@ process plot_PCA_col_hist_fingerprints {
 }
 process compare_col_hist_fingerprints {
 	/* compare fingerprints of column-wise histograms of observed values */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/comparisons", mode: 'copy'
 	input: file chf from colshistfpser
 	output: file 'cols_hist_fp.aaa.gz' into chfaaa
 	output: file 'cols_hist_fp.aaa.hist' into chfaaahist
@@ -84,7 +87,7 @@ process compare_col_hist_fingerprints {
 }
 process index_col_hist_fingerprints {
 	/* index fingerprints of column-wise histograms, using annoy */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file chf from colshistfp
 	output: file 'cols_hist_fp.tree' into colshistfpindex
 	output: file 'cols_hist_fp.names' into colshistfpnames
@@ -94,7 +97,7 @@ process index_col_hist_fingerprints {
 }
 process KNN_col_hist_fingerprints {
 	/* find k nearest neighbors of column-wise histograms, using annoy */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/comparisons", mode: 'copy'
 	input: file chfi from colshistfpindex
 	input: file chfn from colshistfpnames
 	output: file 'cols_hist_fp.knn.gz'
@@ -109,7 +112,7 @@ process KNN_col_hist_fingerprints {
 /* SECTION: row histogram pipeline */
 process row_histograms {
 	/* row-wise histograms of observed values */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/data", mode: 'copy'
 	input: file rd from rowsdata
 	output: file 'rows_hist.json.gz' into rowshist
 	"""
@@ -123,7 +126,7 @@ process row_histograms {
 /* SECTION: row analysis pipeline */
 process compute_row_fingerprints {
 	/* row-wise fingerprints */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file rd from rowsdata
 	output: file 'rows_allfp.raw.gz' into rowsallfp
 	"""
@@ -132,7 +135,7 @@ process compute_row_fingerprints {
 }
 process trim_row_fingerprints {
 	/* trim row-wise fingerprints by triples */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file rfp from rowsallfp
 	output: file 'rows_fp.raw.gz' into rowstrimfp
 	"""
@@ -141,7 +144,7 @@ process trim_row_fingerprints {
 }
 process center_row_fingerprints {
 	/* center row-wise fingerprints */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file rfp from rowstrimfp
 	output: file 'rows_fp.cent.gz' into rowscentfp
 	"""
@@ -150,7 +153,7 @@ process center_row_fingerprints {
 }
 process serialize_cent_row_fingerprints {
 	/* serialize centered row-wise fingerprints */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file rfp from rowscentfp
 	output: file 'rows_fp.fp' into rowsfp
 	output: file 'rows_fp.id' into rowsfpids
@@ -160,7 +163,7 @@ process serialize_cent_row_fingerprints {
 }
 process PCA_row_fingerprints {
 	/* compute PCA on fingerprints of rows */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/analyses", mode: 'copy'
 	input: file rfp from rowscentfp
 	output: file 'rows_fp.pca.gz' into rowsfppca
 	"""
@@ -169,7 +172,7 @@ process PCA_row_fingerprints {
 }
 process plot_PCA_row_fingerprints {
 	/* plot PC1-PC2 on fingerprints of rows */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/visualizations", mode: 'copy'
 	input: file pca from rowsfppca
 	output: file 'rows_fp.pc1_pc2.pdf'
 	"""
@@ -178,7 +181,7 @@ process plot_PCA_row_fingerprints {
 }
 process compare_row_fingerprints {
 	/* compare fingerprints of rows */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/comparisons", mode: 'copy'
 	input: file rfp from rowsfp
 	output: file 'rows_fp.aaa.gz' into rowsaaa
 	output: file 'rows_fp.aaa.hist' into rowsaaahist
@@ -188,7 +191,7 @@ process compare_row_fingerprints {
 }
 process index_row_fingerprints {
 	/* index fingerprints of rows, using annoy */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file rfp from rowscentfp
 	output: file 'rows_fp.tree' into rowsfpindex
 	output: file 'rows_fp.names' into rowsfpnames
@@ -198,7 +201,7 @@ process index_row_fingerprints {
 }
 process KNN_row_fingerprints {
 	/* find k nearest neighbors of rows, using annoy */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/comparisons", mode: 'copy'
 	input: file rfpi from rowsfpindex
 	input: file rfpn from rowsfpnames
 	output: file 'rows_fp.knn.gz'
@@ -212,7 +215,7 @@ process KNN_row_fingerprints {
 /* SECTION: column analysis pipeline */
 process compute_col_fingerprints {
 	/* col-wise fingerprints */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file cd from colsdata
 	output: file 'cols_allfp.raw.gz' into colsallfp
 	"""
@@ -221,7 +224,7 @@ process compute_col_fingerprints {
 }
 process trim_col_fingerprints {
 	/* trim col-wise fingerprints by triples */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file cfp from colsallfp
 	output: file 'cols_fp.raw.gz' into colstrimfp
 	"""
@@ -230,7 +233,7 @@ process trim_col_fingerprints {
 }
 process center_col_fingerprints {
 	/* center col-wise fingerprints */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file cfp from colstrimfp
 	output: file 'cols_fp.cent.gz' into colscentfp
 	"""
@@ -239,7 +242,7 @@ process center_col_fingerprints {
 }
 process serialize_cent_col_fingerprints {
 	/* serialize centered col-wise fingerprints */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file cfp from colscentfp
 	output: file 'cols_fp.fp' into colsfp
 	output: file 'cols_fp.id' into colsfpids
@@ -249,7 +252,7 @@ process serialize_cent_col_fingerprints {
 }
 process PCA_col_fingerprints {
 	/* compute PCA on fingerprints of columns */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/analyses", mode: 'copy'
 	input: file cfp from colscentfp
 	output: file 'cols_fp.pca.gz' into colsfppca
 	"""
@@ -258,7 +261,7 @@ process PCA_col_fingerprints {
 }
 process plot_PCA_col_fingerprints {
 	/* plot PC1-PC2 on fingerprints of columns */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/visualizations", mode: 'copy'
 	input: file pca from colsfppca
 	output: file 'cols_fp.pc1_pc2.pdf'
 	"""
@@ -267,7 +270,7 @@ process plot_PCA_col_fingerprints {
 }
 process compare_col_fingerprints {
 	/* compare fingerprints of columns */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/comparisons", mode: 'copy'
 	input: file cfp from colsfp
 	output: file 'cols_fp.aaa.gz' into colsaaa
 	output: file 'cols_fp.aaa.hist' into colsaaahist
@@ -277,7 +280,7 @@ process compare_col_fingerprints {
 }
 process index_col_fingerprints {
 	/* index fingerprints of columns, using annoy */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file cfp from colscentfp
 	output: file 'cols_fp.tree' into colsfpindex
 	output: file 'cols_fp.names' into colsfpnames
@@ -287,7 +290,7 @@ process index_col_fingerprints {
 }
 process KNN_col_fingerprints {
 	/* find k nearest neighbors of columns, using annoy */
-	publishDir docket, mode: 'copy'
+	publishDir "$docket/comparisons", mode: 'copy'
 	input: file cfpi from colsfpindex
 	input: file cfpn from colsfpnames
 	output: file 'cols_fp.knn.gz'
