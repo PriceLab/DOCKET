@@ -2,9 +2,9 @@
 
 import json
 import argparse
-import common.load as load
+import common.file_io as io
 import common.transform as transform
-import common.utilities as utilities
+import common.utilities as util
 
 
 def main(file, comment=None, sep=None,
@@ -13,9 +13,9 @@ def main(file, comment=None, sep=None,
          rows_out='rows_out.json', cols_out='cols_out.json'):
     assert isinstance(file, str)
     skip_or_comment = comment if (comment is not None) else skip_rows
-    data, metadata = load.load_data(file,
-                                    skip_rows=skip_or_comment, skip_cols=skip_cols,
-                                    sep=sep, has_index=has_index, has_header=has_header)
+    data, metadata = io.load_data(file,
+                                  skip_rows=skip_or_comment, skip_cols=skip_cols,
+                                  sep=sep, has_index=has_index, has_header=has_header)
 
     # Get row and column labels
     row_labels = metadata['row_labels']
@@ -53,9 +53,9 @@ if __name__ == '__main__':
     main(args.source,
          comment=args.comment,
          sep=None if args.sep is None else bytes(args.sep, "utf-8").decode("unicode_escape"),
-         has_header=utilities.str2bool(args.has_header),
-         has_index=utilities.str2bool(args.has_index),
-         skip_rows=int(args.skip_rows) if utilities.is_integer(args.skip_rows) else args.skip_rows,
-         skip_cols=int(args.skip_cols) if utilities.is_integer(args.skip_cols) else 0,
+         has_header=util.str2bool(args.has_header),
+         has_index=util.str2bool(args.has_index),
+         skip_rows=int(args.skip_rows) if util.is_integer(args.skip_rows) else args.skip_rows,
+         skip_cols=int(args.skip_cols) if util.is_integer(args.skip_cols) else 0,
          rows_out=args.rows_out,
          cols_out=args.cols_out)

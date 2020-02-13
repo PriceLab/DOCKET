@@ -1,11 +1,8 @@
 # -----------------------------------------------------------------------------
-# load.py
-# read one or more files into a format ready to transform and analyze
+# file_io.py
+# functions for reading and writing files in various formats (e.g. json, txt, gz)
 #
-# last updated: 1/28/20
-#
-# naming conventions:
-# https://www.python.org/dev/peps/pep-0008/#prescriptive-naming-conventions
+# last updated: 2/13/20
 # -----------------------------------------------------------------------------
 
 import os
@@ -47,6 +44,35 @@ def generate_file_list(file_path, pattern=None):
             else:
                 file_list.append(file_path)
     return file_list
+
+
+# -------------------------------------------------------------------------
+# load_json
+# Load json data from .json or .json.gz file
+#
+# -------------------------------------------------------------------------
+def load_json(file):
+    if file.split('.')[-1] == 'gz':
+        with gzip.GzipFile(file, 'r') as f:
+            data = json.loads(f.read().decode('utf-8'))
+    else:
+        with open(file, 'r') as f:
+            data = json.loads(f.read())
+    return data
+
+
+# -------------------------------------------------------------------------
+# write_json
+# Write json data to .json or .json.gz file format
+#
+# -------------------------------------------------------------------------
+def write_json(data, out_file):
+    if out_file.split('.')[-1] == 'gz':
+        with gzip.GzipFile(out_file, 'w') as f:
+            f.write(json.dumps(data).encode('utf-8'))
+    else:
+        with open(out_file, 'w') as f:
+            f.write(json.dumps(data))
 
 
 # -------------------------------------------------------------------------
@@ -146,7 +172,7 @@ def main(file):
     data, metadata = load_data(file, skip_rows='#')
     print(json.dumps(data))
     return json.dumps(data)
-    
+
 
 if __name__ == '__main__':
     # Parse command-line inputs

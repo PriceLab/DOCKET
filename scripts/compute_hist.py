@@ -1,20 +1,14 @@
 #!/bin/env python3
 
-import json
-import gzip
 import argparse
+import common.file_io as io
 
 
 def main(file, out='hist_out.json'):
     assert isinstance(file, str)
 
-    # Load data
-    if file.split('.')[-1] == 'gz':
-        with gzip.GzipFile(file, 'r') as f:
-            data = json.loads(f.read().decode())
-    else:
-        with open(file, 'r') as f:
-            data = json.loads(f.read())
+    # Load data from .json or .json.gz file
+    data = io.load_json(file)
 
     # Convenience function to collapse dict values to counts
     def collapse_unique(dict_):
@@ -25,13 +19,8 @@ def main(file, out='hist_out.json'):
 
     data_counts = {k: collapse_unique(v) for k, v in data.items()}
 
-    # Write data to json file
-    if out.split('.')[-1] == 'gz':
-        with gzip.GzipFile(out, 'w') as f:
-            f.write(json.dumps(data_counts).encode('utf-8'))
-    else:
-        with open(out, 'w') as f:
-            f.write(json.dumps(data_counts))
+    # Write data to .json or .json.gz file format
+    io.write_json(data_counts, out)
 
     return data_counts
 

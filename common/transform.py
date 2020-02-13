@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # transform.py
 # Transform data loaded from file into a format that is ready for analysis
-# and summary (first use load_data, defined in load.py)
+# and summary (first use load_data, defined in file_io.py)
 #
 # Last updated: 1/31/20
 #
