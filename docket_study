@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 dbin = "$baseDir/scripts"
-lphbin = "/users/gglusman/proj/LPH/data-fingerprints/bin"
+lphbin = "$baseDir/data-fingerprints"
 
 /* parameter defaults */
 params.infile = 'test/test_data.txt'
