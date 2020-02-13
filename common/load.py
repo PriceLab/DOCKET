@@ -90,8 +90,8 @@ def load_data(file_path, sep=None, skip_rows=None, skip_cols=0, has_header=False
     else:
         skipped_lines = []
 
-    # Save column labels, if available (using :1 prevents index error if data is [])
-    col_labels = data[:1] if has_header else ''
+    # Save column labels, if available
+    col_labels = data[0] if has_header and len(data) > 0 else ''
 
     # Override specified separator if csv
     if ext == '.csv':
@@ -122,10 +122,9 @@ def load_data(file_path, sep=None, skip_rows=None, skip_cols=0, has_header=False
         max_cols = max(num_cols) if len(num_cols) > 0 else 0
 
         # Generate column labels
-        if has_header:
-            col_labels = col_labels.split() if sep is None else col_labels.split(sep)
-            diff = max_cols-len(col_labels)
-            col_labels = [f'C{i}' if i < diff else col_labels[i-max(0, diff)] for i in range(max_cols)]
+        col_labels = col_labels.split() if sep is None else col_labels.split(sep)
+        if has_header and len(col_labels) > max_cols:
+            col_labels = col_labels[-max_cols:]
         else:
             col_labels = [f'C{i}' for i in range(max_cols)]
 
