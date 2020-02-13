@@ -10,7 +10,7 @@
 # -----------------------------------------------------------------------------
 
 import os
-import common.load as load
+import common.file_io as io
 import common.transform as transform
 
 
@@ -47,7 +47,7 @@ class DocketMaker:
         self.has_header = kwargs['has_header'] if 'has_header' in kwargs else False
         self.has_index = kwargs['has_index'] if 'has_index' in kwargs else False
         # Generate filtered (if specified) file list
-        self.file_list = load.generate_file_list(self.files, self.file_pattern) if 'files' in kwargs else None
+        self.file_list = io.generate_file_list(self.files, self.file_pattern) if 'files' in kwargs else None
         # Load file data and generate file metadata
         self.file_data, self.file_metadata = self.load_data(self.file_list,
                                                             sep=self.sep,
@@ -61,7 +61,7 @@ class DocketMaker:
         file_data = {}
         file_metadata = {}
         for file in file_list:
-            data, metadata = load.load_data(file, sep, skip_rows, skip_cols, has_header, has_index)
+            data, metadata = io.load_data(file, sep, skip_rows, skip_cols, has_header, has_index)
             # Get file name root
             name, _ = os.path.splitext(metadata['file_path'])
             label = os.path.basename(name)
