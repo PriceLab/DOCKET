@@ -3,9 +3,9 @@ dbin = "$baseDir/scripts"
 lphbin = "$baseDir/data-fingerprints"
 
 /* parameter defaults */
-params.infile = 'test/test_data.txt'
+params.infile = "$baseDir/test/test_data.txt"
 params.format = 'table'
-params.docket = 'test/test_data.docket'
+params.docket = "$baseDir/test/test_data.docket"
 params.L = 500
 params.histL = 50
 params.minTriples = 1
