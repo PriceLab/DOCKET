@@ -12,6 +12,8 @@ if ($file_format eq 'xml') {
 	$info = read_xml($infile);
 } elsif ($file_format eq 'table') {
 	$info = read_tabular($infile, 1, 0, 0, 0); # 1 header line, default delimiter, id in column 0, skip 0 columns
+} elsif ($file_format eq 'pandas') {
+	$info = read_tabular($infile, 1, ',', 0, 0); # 1 header line, default delimiter, id in column 0, skip 0 columns
 } elsif ($file_format eq 'rtable') {
 	$info = read_tabular($infile, 1, ' ', 0, 1); # 1 header line, space-delimited, id in column 0, skip 1 column
 } elsif ($file_format eq 'lol') {
@@ -62,6 +64,8 @@ sub read_tabular {
 		my(@v) = split $delimiter;
 		push @headers, \@v;
 	}
+	
+	$headers[0][0] ||= 'id'; ## to patch up pandas format with an empty field - but should pay attention to $idcol
 
 	while (<INF>) {
 		chomp;
