@@ -3,7 +3,7 @@ $|=1;
 use strict;
 use JSON;
 
-my($infile, $file_format) = @ARGV;
+my($infile, $file_format, $skipDuplicates) = @ARGV;
 die unless $infile;
 
 $file_format ||= determine_format($infile);
@@ -82,10 +82,12 @@ sub read_tabular {
 				@names = map {"col_$_"} (0..$#v);
 			}
 		}
-
+		
+		$id = $v[$idcol];
+		next if $skipDuplicates && defined $rowwise{$id};
+		
 		$colHist[scalar @v]++;
 		$rows++;
-		$id = $v[$idcol];
 		foreach my $col ($skipcols..$#v) {
 			my $v = $v[$col];
 			$colwise{$names[$col]}{$id} = $rowwise{$id}{$names[$col]} = $v;
