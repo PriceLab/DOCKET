@@ -1,11 +1,8 @@
 # -----------------------------------------------------------------------------
-# load.py
-# read one or more files into a format ready to transform and analyze
+# file_io.py
+# functions for reading and writing files in various formats (e.g. json, txt, gz)
 #
-# last updated: 1/28/20
-#
-# naming conventions:
-# https://www.python.org/dev/peps/pep-0008/#prescriptive-naming-conventions
+# last updated: 2/13/20
 # -----------------------------------------------------------------------------
 
 import os
@@ -50,6 +47,35 @@ def generate_file_list(file_path, pattern=None):
 
 
 # -------------------------------------------------------------------------
+# load_json
+# Load json data from .json or .json.gz file
+#
+# -------------------------------------------------------------------------
+def load_json(file):
+    if file.split('.')[-1] == 'gz':
+        with gzip.GzipFile(file, 'r') as f:
+            data = json.loads(f.read().decode('utf-8'))
+    else:
+        with open(file, 'r') as f:
+            data = json.loads(f.read())
+    return data
+
+
+# -------------------------------------------------------------------------
+# write_json
+# Write json data to .json or .json.gz file format
+#
+# -------------------------------------------------------------------------
+def write_json(data, out_file):
+    if out_file.split('.')[-1] == 'gz':
+        with gzip.GzipFile(out_file, 'w') as f:
+            f.write(json.dumps(data).encode('utf-8'))
+    else:
+        with open(out_file, 'w') as f:
+            f.write(json.dumps(data))
+
+
+# -------------------------------------------------------------------------
 # load_data
 # Load data from the specified file path.
 #
@@ -90,8 +116,8 @@ def load_data(file_path, sep=None, skip_rows=None, skip_cols=0, has_header=False
     else:
         skipped_lines = []
 
-    # Save column labels, if available (using :1 prevents index error if data is [])
-    col_labels = data[:1] if has_header else ''
+    # Save column labels, if available
+    col_labels = data[0] if has_header and len(data) > 0 else ''
 
     # Override specified separator if csv
     if ext == '.csv':
@@ -122,10 +148,9 @@ def load_data(file_path, sep=None, skip_rows=None, skip_cols=0, has_header=False
         max_cols = max(num_cols) if len(num_cols) > 0 else 0
 
         # Generate column labels
-        if has_header:
-            col_labels = col_labels.split() if sep is None else col_labels.split(sep)
-            diff = max_cols-len(col_labels)
-            col_labels = [f'C{i}' if i < diff else col_labels[i-max(0, diff)] for i in range(max_cols)]
+        col_labels = col_labels.split() if sep is None else col_labels.split(sep)
+        if has_header and len(col_labels) > max_cols:
+            col_labels = col_labels[-max_cols:]
         else:
             col_labels = [f'C{i}' for i in range(max_cols)]
 
@@ -147,7 +172,7 @@ def main(file):
     data, metadata = load_data(file, skip_rows='#')
     print(json.dumps(data))
     return json.dumps(data)
-    
+
 
 if __name__ == '__main__':
     # Parse command-line inputs
