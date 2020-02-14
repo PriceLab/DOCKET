@@ -20,7 +20,7 @@ process ingest_file {
     file 'cols_data.json' into colsdata
 
     """
-    python ${pyscripts}/ingest.py \
+    ${pyscripts}/ingest.py \
       --source $infile \
       --comment '#' \
       --rows_out 'rows_data.json' \

@@ -1,13 +1,14 @@
 # -----------------------------------------------------------------------------
 # transform.py
 # Transform data loaded from file into a format that is ready for analysis
-# and summary (first use load_data, defined in load.py)
+# and summary (first use load_data, defined in file_io.py)
 #
 # Last updated: 1/31/20
 #
 # Naming conventions:
 # https://www.python.org/dev/peps/pep-0008/#prescriptive-naming-conventions
 # -----------------------------------------------------------------------------
+import numpy as np
 import common.utilities as utilities
 from datafingerprint import DataFingerprint
 
@@ -51,27 +52,24 @@ def tabular2json(data, row_labels, col_labels, by_col=False, pad_rows=True):
     level1_labels = row_labels
     level2_labels = col_labels
 
-    # If converting to json by column, rows must be the same lengths
-    if by_col:
-        if pad_rows is False:
-            # Notify that pad_rows will be ignored and data will be padded
-            print('\nWarning: When converting by column, rows must be padded.')
-            print('Padding rows to size of longest row...')
+    if isinstance(data, np.ndarray):
+        data = data.astype(str).tolist()
 
+    if pad_rows:
         # Pad rows to size of longest row
         pad_size = max([len(row) for row in data])
         data = pad_tabular_data(data, pad_size, pad_value='')
 
-        # Transpose data
+    # If converting to json by column, data must be transposed
+    if by_col:
+        # Must not proceed if rows are different lengths
+        if len(set([len(row) for row in data])) > 1:
+            print('Warning: Rows are different lengths! Cannot convert to JSON column-wise.')
+            return {}
+
         level1_labels = col_labels
         level2_labels = row_labels
         data = [[data[i][j] for i in range(len(level2_labels))] for j in range(len(level1_labels))]
-
-    else:  # Convert to json by row
-        if pad_rows:
-            # Pad rows to size of longest row
-            pad_size = max([len(row) for row in data])
-            data = pad_tabular_data(data, pad_size, pad_value='')
 
     second_level = [{k: v for k, v in list(zip(level2_labels, data[i]))} for i in range(len(level1_labels))]
     json_data = {level1_labels[i]: d for i, d in enumerate(second_level)}

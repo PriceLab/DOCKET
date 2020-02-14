@@ -1,12 +1,14 @@
-import json
+#!/bin/env python3
+
 import argparse
+import common.file_io as io
 
 
 def main(file, out='hist_out.json'):
     assert isinstance(file, str)
 
-    with open(file, 'r') as fin:
-        data = json.loads(fin.read())
+    # Load data from .json or .json.gz file
+    data = io.load_json(file)
 
     # Convenience function to collapse dict values to counts
     def collapse_unique(dict_):
@@ -17,8 +19,8 @@ def main(file, out='hist_out.json'):
 
     data_counts = {k: collapse_unique(v) for k, v in data.items()}
 
-    with open(out, 'w') as fout:
-        fout.write(json.dumps(data_counts))
+    # Write data to .json or .json.gz file format
+    io.write_json(data_counts, out)
 
     return data_counts
 
