@@ -24,7 +24,10 @@ def main(file,
 
     # Get row and column labels
     row_labels = list(data.index)
+    row_labels = [str(x) for x in row_labels]
+
     col_labels = list(data.columns)
+    col_labels = [str(x) for x in col_labels]
 
     # Convert to list of lists for subsequent processing
     data = data.values
