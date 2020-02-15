@@ -10,7 +10,7 @@
 # -----------------------------------------------------------------------------
 import numpy as np
 import common.utilities as utilities
-from datafingerprint import DataFingerprint
+#from datafingerprint import DataFingerprint
 
 
 # -------------------------------------------------------------------------
