@@ -209,6 +209,15 @@ process KNN_row_fingerprints {
 	$dbin/annoyQueryAll.py --index $rfpi --names $rfpn --L $L --k 100 | gzip -c > rows_fp.knn.gz
 	"""
 }
+process row_cluster_hier {
+    /* Compute row-wise clustering */
+    publishDir "$docket/analyses", mode: 'copy'
+    input: file rpca from rowsfppca
+    output: file 'rows_hier_clusters.txt.gz' into rows_hier_clust
+    """
+    $dbin/hierarchical_clustering.py --source $rpca | uniq | gzip -c > rows_hier_clusters.txt.gz
+    """
+}
 /* END SECTION: row analysis pipeline */
 
 
@@ -297,5 +306,14 @@ process KNN_col_fingerprints {
 	"""
 	$dbin/annoyQueryAll.py --index $cfpi --names $cfpn --L $L --k 100 | gzip -c > cols_fp.knn.gz
 	"""
+}
+process col_cluster_hier {
+    /* Compute col-wise clustering */
+    publishDir "$docket/analyses", mode: 'copy'
+    input: file cpca from colsfppca
+    output: file 'cols_hier_clusters.txt.gz' into cols_hier_clust
+    """
+    $dbin/hierarchical_clustering.py --source $cpca | uniq | gzip -c > cols_hier_clusters.txt.gz
+    """
 }
 /* END SECTION: column analysis pipeline */
