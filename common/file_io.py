@@ -30,7 +30,7 @@ def generate_file_list(file_path, pattern=None):
         # Recurse into folders
         if os.path.isdir(file_path):
             for p in os.listdir(file_path):
-                file_list += generate_file_list('/'.join(file_path,p), pattern)
+                file_list += generate_file_list(f'{file_path}/{p}', pattern)
         elif os.path.isfile(file_path):
             if pattern:
                 match = None
@@ -38,7 +38,7 @@ def generate_file_list(file_path, pattern=None):
                     pattern = re.compile(pattern)
                     match = pattern.search(file_path)
                 except re.error:
-                    print('Invalid regular expression: ',pattern)
+                    print(f'Invalid regular expression: {pattern}')
                 if match:
                     file_list.append(file_path)
             else:
@@ -128,7 +128,7 @@ def load_data(file_path, sep=None, skip_rows=None, skip_cols=0, has_header=False
         data = data[1:]
 
     # Generate default row labels
-    row_labels = [''.join('R',i) for i in range(len(data))]
+    row_labels = [f'R{i}' for i in range(len(data))]
 
     if ext == '.json':
         num_cols = 1
@@ -138,7 +138,7 @@ def load_data(file_path, sep=None, skip_rows=None, skip_cols=0, has_header=False
         data = [row.split() if sep is None else row.split(sep) for row in data]
         if has_index:
             # Get row labels
-            row_labels = [row[skip_cols] if len(row) > skip_cols else ''.join('R',i) for i, row in enumerate(data)]
+            row_labels = [row[skip_cols] if len(row) > skip_cols else f'R{i}' for i, row in enumerate(data)]
 
         # Get data to the right of skipped columns
         data = [row[skip_cols+1:] if has_index else row[skip_cols:] for row in data]
@@ -152,7 +152,7 @@ def load_data(file_path, sep=None, skip_rows=None, skip_cols=0, has_header=False
         if has_header and len(col_labels) > max_cols:
             col_labels = col_labels[-max_cols:]
         else:
-            col_labels = [''.join('C',i) for i in range(max_cols)]
+            col_labels = [f'C{i}' for i in range(max_cols)]
 
     # Generate metadata
     metadata = dict()
