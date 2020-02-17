@@ -40,8 +40,10 @@ process column_histograms {
 	publishDir "$docket/data", mode: 'copy'
 	input: file cd from colsdata
 	output: file 'cols_hist.json.gz' into colshist
+	output: file 'cols_types.json.gz' into colstypes
 	"""
-	$dbin/compute_hist.pl $cd | gzip -c > cols_hist.json.gz
+	$dbin/compute_hist.pl $cd cols_hist.json cols_types.json
+	gzip cols_hist.json cols_types.json
 	"""
 }
 process compute_col_hist_fingerprints {
@@ -115,8 +117,10 @@ process row_histograms {
 	publishDir "$docket/data", mode: 'copy'
 	input: file rd from rowsdata
 	output: file 'rows_hist.json.gz' into rowshist
+	output: file 'rows_types.json.gz' into rowstypes
 	"""
-	$dbin/compute_hist.pl $rd | gzip -c > rows_hist.json.gz
+	$dbin/compute_hist.pl $rd rows_hist.json rows_types.json
+	gzip rows_hist.json rows_types.json
 	"""
 }
 /* END SECTION: row histogram pipeline */
