@@ -31,6 +31,7 @@ sub compute_content_histogram {
 	my(%hist, %types);
 
 	while (my($id, $ref) = each %$what) {
+		$id = $1 if $id =~ /^\"(.+)\"$/;
 		foreach my $value (values %$ref) {
 			#next unless $value;
 			if (ref $value eq 'ARRAY') {
@@ -58,7 +59,7 @@ sub compute_content_histogram {
 					if ($decimals && $value =~ /\./) {
 						$value = sprintf("%.${decimals}f", $value);
 					}
-				} elsif ($value eq '') {
+				} elsif ($value eq '' || $value eq 'NA') {
 					$types{$id}{'NULL'}++;
 				} else {
 					$types{$id}{'STR'}++;
