@@ -320,4 +320,24 @@ process col_cluster_hier {
     $dbin/hierarchical_clustering.py --source $cpca | uniq | gzip -c > cols_hier_clusters.txt.gz
     """
 }
+
+process compute_numeric_associations {
+	/* compute pairwise Spearman correlations between numerical columns */
+	publishDir "$docket/comparisons", mode: 'copy'
+	input: file ctypes from colstypes
+	output: file 'num_assoc.gz'
+	"""
+	$dbin/numerical_associations.py --infile $params.infile --types_file $ctypes --header_row 0 --index_col 0 | gzip -c > num_assoc.gz
+	"""
+}
+process compute_categorical_associations {
+	/* compute pairwise Cramer V and Theil's U between categorical columns */
+	publishDir "$docket/comparisons", mode: 'copy'
+	input: file ctypes from colstypes
+	output: file 'cat_assoc.gz'
+	"""
+	$dbin/categorical_associations.py --infile $params.infile --types_file $ctypes --header_row 0 --index_col 0 | gzip -c > cat_assoc.gz
+	"""
+}
+
 /* END SECTION: column analysis pipeline */
