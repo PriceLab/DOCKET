@@ -10,6 +10,8 @@ params.L = 500
 params.histL = 50
 params.minTriples = 1
 params.skipDuplicates = 1
+params.rowclusters = 3
+params.colclusters = 5
 
 /* interpret parameters */
 infile = file(params.infile)
@@ -221,7 +223,7 @@ process plot_PCA_row_fingerprints {
 	input: file rhc from rows_hier_clust
 	output: file 'rows_fp.pc1_pc2.pdf'
 	"""
-	$dbin/plotpca.py $pca rows_fp.pc1_pc2.pdf --clustering $rhc
+	$dbin/plotpca.py $pca rows_fp.pc1_pc2.pdf --clustering $rhc --clusters $params.rowclusters
 	"""
 }
 /* END SECTION: row analysis pipeline */
@@ -320,7 +322,7 @@ process plot_PCA_col_fingerprints {
 	input: file chc from cols_hier_clust
 	output: file 'cols_fp.pc1_pc2.pdf'
 	"""
-	$dbin/plotpca.py $pca cols_fp.pc1_pc2.pdf --clustering $chc
+	$dbin/plotpca.py $pca cols_fp.pc1_pc2.pdf --clustering $chc --clusters $params.colclusters
 	"""
 }
 process compute_numeric_associations {

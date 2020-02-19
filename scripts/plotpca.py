@@ -33,11 +33,16 @@ color = 'black'
 # read clustering information if available
 if clustersfile:
     with gzip.open(clustersfile, 'rb') as cf:
-        ids = cf.readline()
-        throwaway = cf.readline()
+        ids = cf.readline().decode('utf8').strip()
+        ids = ids[1:]
+        for i in range(int(args.clusters)-2):
+            throwaway = cf.readline()
         clust = cf.readline().decode('utf8').strip()
         clust = clust.split('\t')
         color = clust[1:]
+        
+        ### the following assumes that the identifiers in the clustering are in the same order as in the PCA output file
+        ### this seems to be true, but we should match names <-> ids to do this properly
         color = [float(c)/2 for c in color]
 
 # plot
