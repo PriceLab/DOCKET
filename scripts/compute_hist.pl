@@ -2,6 +2,7 @@
 $|=1;
 use strict;
 use JSON;
+use Scalar::Util qw(looks_like_number);
 
 my($storeddata, $hist_outfile, $types_outfile, $decimals) = @ARGV;
 my $json;
@@ -38,7 +39,7 @@ sub compute_content_histogram {
 				foreach my $v (@{$value}) {
 					## modify to get rid of surrounding quotes, trimming numerical resolution, other cleanups
 					$value = $1 if $value =~ /^\"(.+)\"$/;
-					if (isnumeric($v)) {
+					if (looks_like_number($v)) {
 						$types{$id}{'NUM'}++;
 						if ($decimals && $v =~ /\./) {
 							$value = sprintf("%.${decimals}f", $v);
@@ -54,7 +55,7 @@ sub compute_content_histogram {
 			} else {
 				## modify to get rid of surrounding quotes, trimming numerical resolution, other cleanups
 				$value = $1 if $value =~ /^\"(.+)\"$/;
-				if (isnumeric($value)) {
+				if (looks_like_number($value)) {
 					$types{$id}{'NUM'}++;
 					if ($decimals && $value =~ /\./) {
 						$value = sprintf("%.${decimals}f", $value);
@@ -70,18 +71,4 @@ sub compute_content_histogram {
 		}
 	}
 	return \%hist, \%types;
-}
-
-sub isnumeric ($) {
-        no warnings;
-        my $v = $_[0];
-        $v =~ s/0+$// if $v =~ /\.\d*?0+/;
-        $v =~ s/\.$//;
-        if (substr($v,0,1) eq '.') {
-                return "0$v" eq $v+0;
-        } elsif ($v =~ /^([\-\+])\.(.+)/) {
-                return "${1}0.$2" eq $v+0;
-        } else {
-                return $v eq $v+0;
-        }
 }

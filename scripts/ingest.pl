@@ -13,10 +13,10 @@ if ($file_format eq 'xml') {
 } elsif ($file_format eq 'table') {
 	$info = read_tabular($infile, 1, 0, 0, 0); # 1 header line, default delimiter, id in column 0, skip 0 columns
 } elsif ($file_format eq 'pandas') {
-	$info = read_tabular($infile, 1, ',', 0, 0); # 1 header line, default delimiter, id in column 0, skip 0 columns
+	$info = read_tabular($infile, 1, ',', 0, 0); # 1 header line, comma-delimited, id in column 0, skip 0 columns
 } elsif ($file_format eq 'rtable') {
 	$info = read_tabular($infile, 1, ' ', 0, 1); # 1 header line, space-delimited, id in column 0, skip 1 column
-} elsif ($file_format eq 'lol') {
+} elsif ($file_format eq 'lol') { #list of lists
 	$info = read_lol($infile, 0, 0, 0, 2); # 0 header lines, default delimiter, id in column 0, skip 2 columns
 } elsif ($file_format eq 'xyz') {
 	$info = read_xyz($infile, 1, ','); # 1 header line, comma-delimited
@@ -39,7 +39,7 @@ sub determine_format { ###unfinished
 	my $test = `file $file`;
 	return 'xml' if $test =~ /: XML/;
 
-	return '?';
+	return 'table';
 }
 
 
@@ -68,6 +68,7 @@ sub read_tabular {
 	$headers[0][0] ||= 'id'; ## to patch up pandas format with an empty field - but should pay attention to $idcol
 
 	while (<INF>) {
+		next if /^#/;
 		chomp;
 		s/\r//g;
 		my(@v) = split $delimiter;
@@ -115,13 +116,17 @@ sub read_lol { # list of lists
 	}
 
 	foreach my $i (1..$headerLines) {
-		$_ = <INF>;
+		while (<INF>) {
+			next if /^#/;
+			last;
+		}
 		chomp;
 		my(@v) = split $delimiter;
 		push @headers, \@v;
 	}
 
 	while (<INF>) {
+		next if /^#/;
 		chomp;
 		my(@v) = split $delimiter;
 		$colHist[scalar @v]++;
@@ -154,13 +159,17 @@ sub read_xyz { # row-col-value triples
 	}
 
 	foreach my $i (1..$headerLines) {
-		$_ = <INF>;
+		while (<INF>) {
+			next if /^#/;
+			last;
+		}
 		chomp;
 		my(@v) = split $delimiter;
 		push @headers, \@v;
 	}
 
 	while (<INF>) {
+		next if /^#/;
 		chomp;
 		my(@v) = split $delimiter;
 		$colHist[scalar @v]++;
