@@ -9,6 +9,7 @@ params.docket = "$baseDir/test/test_data.docket"
 params.L = 500
 params.histL = 50
 params.minTriples = 1
+params.skipDuplicates = 1
 
 /* interpret parameters */
 infile = file(params.infile)
@@ -27,7 +28,7 @@ process ingest_file {
 		file 'cols_data.json.gz' into colsdata
 		file 'rows_data.json.gz' into rowsdata
 	"""
-	${dbin}/ingest.pl $params.infile $params.format 1
+	${dbin}/ingest.pl $params.infile $params.format $params.skipDuplicates
 	"""
 }
 /* END SECTION: preparation */
