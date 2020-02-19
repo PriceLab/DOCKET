@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.preprocessing import normalize
 import scipy.cluster.hierarchy as shc
 from scipy.cluster.hierarchy import fcluster
+import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--source', help='File to load')
@@ -29,13 +30,11 @@ linkage = shc.linkage(values, method=args.method)
 
 # Generate a list of dendrogram cutoff values
 cutoff_values = [int(100 * c) / 100 for c in linkage[:, 2]]
+cutoff_values = np.unique(cutoff_values)
 
 # Generate cluster assignments at different cutoff values
-cluster_assignments = [fcluster(linkage, c, criterion=args.criterion) for c in cutoff_values]
+cluster_assignments = [fcluster(linkage, c, criterion=args.criterion) for c in reversed(cutoff_values)]
 
 # Write results to stdout
 cluster_assignments = pd.DataFrame(cluster_assignments, index=cutoff_values, columns=labels)
 print(cluster_assignments.to_csv(sep='\t', index=True))
-
-### known issue: result may include a very large number of redundant lines
-### temporarily solving by piping the output through uniq (in docket_study)
