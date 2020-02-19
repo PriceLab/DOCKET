@@ -175,15 +175,6 @@ process PCA_row_fingerprints {
 	$dbin/pca.py $rfp --L $L | gzip -c > rows_fp.pca.gz
 	"""
 }
-process plot_PCA_row_fingerprints {
-	/* plot PC1-PC2 on fingerprints of rows */
-	publishDir "$docket/visualizations", mode: 'copy'
-	input: file pca from rowsfppca
-	output: file 'rows_fp.pc1_pc2.pdf'
-	"""
-	$dbin/plotpca.py $pca rows_fp.pc1_pc2.pdf
-	"""
-}
 process compare_row_fingerprints {
 	/* compare fingerprints of rows */
 	publishDir "$docket/comparisons", mode: 'copy'
@@ -222,6 +213,16 @@ process row_cluster_hier {
     """
     $dbin/hierarchical_clustering.py --source $rpca | gzip -c > rows_hier_clusters.txt.gz
     """
+}
+process plot_PCA_row_fingerprints {
+	/* plot PC1-PC2 on fingerprints of rows */
+	publishDir "$docket/visualizations", mode: 'copy'
+	input: file pca from rowsfppca
+	input: file rhc from rows_hier_clust
+	output: file 'rows_fp.pc1_pc2.pdf'
+	"""
+	$dbin/plotpca.py $pca rows_fp.pc1_pc2.pdf --clustering $rhc
+	"""
 }
 /* END SECTION: row analysis pipeline */
 
@@ -273,15 +274,6 @@ process PCA_col_fingerprints {
 	$dbin/pca.py $cfp --L $L | gzip -c > cols_fp.pca.gz
 	"""
 }
-process plot_PCA_col_fingerprints {
-	/* plot PC1-PC2 on fingerprints of columns */
-	publishDir "$docket/visualizations", mode: 'copy'
-	input: file pca from colsfppca
-	output: file 'cols_fp.pc1_pc2.pdf'
-	"""
-	$dbin/plotpca.py $pca cols_fp.pc1_pc2.pdf
-	"""
-}
 process compare_col_fingerprints {
 	/* compare fingerprints of columns */
 	publishDir "$docket/comparisons", mode: 'copy'
@@ -321,7 +313,16 @@ process col_cluster_hier {
     $dbin/hierarchical_clustering.py --source $cpca | gzip -c > cols_hier_clusters.txt.gz
     """
 }
-
+process plot_PCA_col_fingerprints {
+	/* plot PC1-PC2 on fingerprints of columns */
+	publishDir "$docket/visualizations", mode: 'copy'
+	input: file pca from colsfppca
+	input: file chc from cols_hier_clust
+	output: file 'cols_fp.pc1_pc2.pdf'
+	"""
+	$dbin/plotpca.py $pca cols_fp.pc1_pc2.pdf --clustering $chc
+	"""
+}
 process compute_numeric_associations {
 	/* compute pairwise Spearman correlations between numerical columns */
 	publishDir "$docket/comparisons", mode: 'copy'
