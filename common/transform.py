@@ -9,8 +9,6 @@
 # https://www.python.org/dev/peps/pep-0008/#prescriptive-naming-conventions
 # -----------------------------------------------------------------------------
 import numpy as np
-import common.utilities as utilities
-from datafingerprint import DataFingerprint
 
 
 # -------------------------------------------------------------------------
@@ -75,30 +73,3 @@ def tabular2json(data, row_labels, col_labels, by_col=False, pad_rows=True):
     json_data = {level1_labels[i]: d for i, d in enumerate(second_level)}
 
     return json_data
-
-
-# -------------------------------------------------------------------------
-# encode_fp
-# Encode data as fingerprint vectors. Data are expected in a tabular json
-# format (dictionary of dictionaries). See description of tabular2json
-# function for details.
-#
-# -------------------------------------------------------------------------
-def encode_fp(data_in, length):
-    # Check that data is in proper format
-    assert isinstance(data_in, dict)
-    for k, v in data_in.items():
-        assert isinstance(v, dict)
-
-    # Check that length is an int or can be converted to an int
-    assert utilities.is_integer(length)
-
-    # Calculate fingerprints
-    fp_data = {}
-    dfp = DataFingerprint(**{'length': int(length)})
-    for label, data in data_in.items():
-        dfp.recurse_structure(data)
-        fp_data[label] = dfp.fp
-        dfp.reset()
-
-    return fp_data
