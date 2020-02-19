@@ -1,5 +1,5 @@
 #!/bin/env nextflow
-pyscripts = "$baseDir/scripts"
+scripts = "$baseDir/scripts"
 
 /* Parameter defaults */
 params.infile = 'data/hello_docket.txt'
@@ -15,12 +15,14 @@ L = params.L
 
 // Read file and store contents as row-wise and column-wise json
 process ingest_file {
+    publishDir "$docket", mode: 'copy'
+
     output:
     file 'rows_data.json' into rowsdata
     file 'cols_data.json' into colsdata
 
     """
-    ${pyscripts}/ingest.py \
+    ${scripts}/ingest.py \
       --source $infile \
       --comment '#' \
       --rows_out 'rows_data.json' \
@@ -32,6 +34,8 @@ process ingest_file {
 
 // Get row- and column-wise value occurrence counts (histograms)
 process compute_histograms {
+    publishDir "$docket", mode: 'copy'
+
     input:
     file rdata from rowsdata
     file cdata from colsdata
@@ -41,11 +45,11 @@ process compute_histograms {
     file 'cols_hist.json' into colshist
 
     """
-    python ${pyscripts}/compute_hist.py \
+    python ${scripts}/compute_hist.py \
       --source $rdata \
       --out 'rows_hist.json'
 
-    python ${pyscripts}/compute_hist.py \
+    python ${scripts}/compute_hist.py \
       --source $cdata \
       --out 'cols_hist.json'
     """
@@ -53,23 +57,18 @@ process compute_histograms {
 
 // Convert row- and column-wise value occurrence counts to fingerprints
 process compute_histogram_fingerprints {
+    publishDir "$docket", mode: 'copy'
+
     input:
     file rdata from rowshist
     file cdata from colshist
 
     output:
-    file 'rows_histfp.json' into rowshistfp
-    file 'cols_histfp.json' into colshistfp
+    file 'rows_histfp.json.gz' into rowshistfp
+    file 'cols_histfp.json.gz' into colshistfp
 
     """
-    python ${pyscripts}/compute_fp.py \
-      --source $rdata \
-      --L $L \
-      --out 'rows_histfp.json'
-
-    python ${pyscripts}/compute_fp.py \
-      --source $cdata \
-      --L $L \
-      --out 'cols_histfp.json'
+    ${scripts}/compute_fp.pl $rdata $L | gzip -c > rows_histfp.json.gz
+    ${scripts}/compute_fp.pl $cdata $L | gzip -c > cols_histfp.json.gz
     """
 }
