@@ -11,7 +11,7 @@ params.histL = 50
 params.minTriples = 1
 params.skipDuplicates = 1
 params.rowclusters = 3
-params.colclusters = 5
+params.colclusters = 3
 
 /* interpret parameters */
 infile = file(params.infile)
