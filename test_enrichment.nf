@@ -112,11 +112,9 @@ process copy_notebooks {
     publishDir docket, mode: 'copy'
 
     output:
-    file 'visualize-pca-clusters.ipynb'
     file 'visualize-enrichment-results.ipynb'
 
     """
-    cp '$baseDir/notebooks/visualize-pca-clusters.ipynb' .
     cp '$baseDir/notebooks/visualize-enrichment-results.ipynb' .
     """
 }
