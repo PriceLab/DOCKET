@@ -71,10 +71,24 @@ def tabular2json(data, row_labels, col_labels, by_col=False, pad_rows=True):
         level2_labels = row_labels
         data = [[data[i][j] for i in range(len(level2_labels))] for j in range(len(level1_labels))]
 
-    second_level = [{k: v for k, v in list(zip(level2_labels, data[i]))} for i in range(len(level1_labels))]
-    json_data = {level1_labels[i]: d for i, d in enumerate(second_level)}
+    second_level = [{str(k): v for k, v in list(zip(level2_labels, data[i]))} for i in range(len(level1_labels))]
+    json_data = {str(level1_labels[i]): d for i, d in enumerate(second_level)}
 
     return json_data
+
+
+# Generate a dictionary of value occurrence counts
+def generate_occurrence_counts(data):
+    assert(isinstance(data, dict))
+
+    # Convenience function to collapse dict values to counts
+    def collapse_unique(dict_):
+        assert isinstance(dict_, dict)
+        val_list = [val.lower() for val in dict_.values()]
+        val_counts = {s: val_list.count(s) for s in set(val_list)}
+        return val_counts
+
+    return {k: collapse_unique(v) for k, v in data.items()}
 
 
 # -------------------------------------------------------------------------

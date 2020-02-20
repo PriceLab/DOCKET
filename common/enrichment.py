@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 # Convenience function to determine if count is in proper range
@@ -96,6 +97,9 @@ def get_cluster_attribute_fractions(attr_data, attr_values, cl_assignments, clus
         occurrence_counts[cl] = val_counts[attr_values]
         occurrence_fractions[cl] = val_counts[attr_values] / sum(val_counts)
 
+    # Convert to dataframes, fill NaNs, and return
+    occurrence_counts = pd.DataFrame(occurrence_counts).fillna(value=0).T
+    occurrence_fractions = pd.DataFrame(occurrence_fractions).fillna(value=0.).T
     return occurrence_counts, occurrence_fractions
 
 
@@ -125,3 +129,71 @@ def get_sorted_position(value, array_of_values):
     arr.sort()
     idx_pos = np.searchsorted(arr, value)
     return idx_pos
+
+
+# Calculate enrichment on each attribute
+def get_enrichment_scores(attributes_to_use, columns_to_keep, attribute_data,
+                          cluster_data_file, resample_size=50, filter_fraction=0.1):
+
+    # Get cluster assignments for individuals
+    cl_assignments = pd.read_csv(cluster_data_file, sep='\t', index_col=0)
+    cl_assignments = cl_assignments.values[-10:].tolist()
+    cl_assignments.reverse()
+
+    # Get list of clusters that are within a specified size range
+    clusters = [to_cluster_id(i, cl, cnt) for i, cl_list in enumerate(cl_assignments)
+                for cl, cnt in pd.Series(cl_list).value_counts().sort_index().items()
+                if in_range(cnt, len(cl_list), filter_fraction)]
+    clusters = remove_repeat_clusters(clusters, cl_assignments)
+
+    enrichment_scores = []
+    for attr in columns_to_keep:
+        # Get attribute values associated with the current attribute
+        current_attr_values = attributes_to_use.loc[attr, :].index
+
+        # Get the fractional occurrence of attribute values in each cluster
+        current_attr_data = attribute_data[attr]
+        attr_value_counts, attr_value_fractions = get_cluster_attribute_fractions(
+            current_attr_data, current_attr_values, cl_assignments, clusters)
+
+        # For current attribute, calculate enrichment over all clusters
+        for cl in clusters:
+            # Parse cluster string id
+            cl_grp, cl_id, cl_cnt = parse_cluster_id(cl)
+
+            cl_resample = get_resample_fractions(cl, current_attr_data, current_attr_values, resample_size)
+
+            for attr_val in current_attr_values:
+                # Get stats on attribute value occurrence in entire data set
+                count_in_full_dataset = attributes_to_use.loc[attr, attr_val]['count']
+                fraction_in_full_dataset = attributes_to_use.loc[attr, attr_val]['fraction']
+
+                # Get stats on attribute value occurrence in cluster
+                cnt_with_attr_val = attr_value_counts.loc[cl, attr_val]
+                frac_with_attr_val = attr_value_fractions.loc[cl, attr_val]
+
+                # Get quantile of observed occurrence fraction
+                fraction_rank = get_sorted_position(frac_with_attr_val, cl_resample[attr_val])
+                fraction_quantile = fraction_rank / resample_size
+
+                # Store results as a data frame
+                current_results = [
+                    f'{cl_grp}.{cl_id}',  # Cluster identifier (e.g. 0.1)
+                    attr,  # Attribute (e.g. sex)
+                    attr_val,  # Attribute value (e.g. male, female)
+                    count_in_full_dataset,  # Count in full data set
+                    fraction_in_full_dataset,  # Fraction in full data set
+                    cl_cnt,   # Count of members within cluster
+                    cnt_with_attr_val,  # Count in cluster with attribute value
+                    frac_with_attr_val,  # Fraction in cluster with attribute value
+                    fraction_quantile  # Quantile of observed occurrence fraction
+                ]
+                print(current_results)
+                enrichment_scores.append(current_results)
+
+    # Save enrichment results to file
+    columns = ['cluster_id', 'attribute', 'attribute_value', 'total_count', 'total_fraction',
+               'cluster_count', 'attr_value_count', 'attr_value_fraction', 'quantile']
+    enrichment_scores = pd.DataFrame(enrichment_scores, columns=columns)
+
+    return enrichment_scores

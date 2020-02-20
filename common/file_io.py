@@ -9,7 +9,7 @@ import os
 import re
 import gzip
 import json
-import argparse
+import pandas as pd
 
 
 # -------------------------------------------------------------------------
@@ -73,6 +73,33 @@ def write_json(data, out_file):
     else:
         with open(out_file, 'w') as f:
             f.write(json.dumps(data))
+
+
+# Load configuration for handling file I/O and preprocessing
+def load_io_config(config_path, base_dir=None):
+    # Path to configuration file
+    config_path = config_path if base_dir is None else f'{base_dir}/{config_path}'
+
+    # Specify full list of file load settings
+    index = ['path', 'sep', 'index_col', 'header']
+
+    # Load information about files to read and preprocess
+    config = pd.read_json(config_path)
+    config = pd.DataFrame(config, index=index)
+    file_ids = list(config.columns)
+    if 'default' in file_ids:
+        defaults = pd.Series(config['default'], index=index)
+        config.drop('default', axis=1, inplace=True)
+        file_ids.remove('default')
+    else:
+        defaults = pd.Series(index=index)
+
+    # Expand imported configuration with default values
+    for file_id in file_ids:
+        options = [opt2 if pd.isnull(opt1) else opt1 for opt1, opt2 in zip(config[file_id], defaults)]
+        config[file_id] = pd.Series(options, index=index)
+
+    return config
 
 
 # -------------------------------------------------------------------------
@@ -165,21 +192,3 @@ def load_data(file_path, sep=None, skip_rows=None, skip_cols=0, has_header=False
     metadata['skipped_lines'] = skipped_lines
 
     return data, metadata
-
-
-def main(file):
-    assert isinstance(file, str)
-    data, metadata = load_data(file, skip_rows='#')
-    print(json.dumps(data))
-    return json.dumps(data)
-
-
-if __name__ == '__main__':
-    # Parse command-line inputs
-    load_parser = argparse.ArgumentParser()
-
-    # File IO arguments
-    load_parser.add_argument('--source', help='File to load')
-    load_args = load_parser.parse_args()
-
-    main(load_args.source)
