@@ -12,6 +12,8 @@
 import os
 import common.file_io as io
 import common.transform as transform
+import common.utilities as utilities
+from datafingerprint import DataFingerprint
 
 
 class DocketMaker:
@@ -95,3 +97,30 @@ class DocketMaker:
 
         data = self.file_data[label]
         self.file_data[label] = transform.pad_tabular_data(data, pad_size, pad_value)
+
+
+# -------------------------------------------------------------------------
+# encode_fp
+# Encode data as fingerprint vectors. Data are expected in a tabular json
+# format (dictionary of dictionaries). See description of tabular2json
+# function for details.
+#
+# -------------------------------------------------------------------------
+def encode_fp(data_in, length):
+    # Check that data is in proper format
+    assert isinstance(data_in, dict)
+    for k, v in data_in.items():
+        assert isinstance(v, dict)
+
+    # Check that length is an int or can be converted to an int
+    assert utilities.is_integer(length)
+
+    # Calculate fingerprints
+    fp_data = {}
+    dfp = DataFingerprint(**{'length': int(length)})
+    for label, data in data_in.items():
+        dfp.recurse_structure(data)
+        fp_data[label] = dfp.fp
+        dfp.reset()
+
+    return fp_data

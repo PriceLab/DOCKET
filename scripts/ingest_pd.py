@@ -4,7 +4,21 @@ import argparse
 import pandas as pd
 import common.transform as transform
 import common.file_io as io
+import json
 
+def identify_types(data):
+    num_cols = []
+    cat_cols = []
+
+    types = data.dtypes
+    columns = list(data)
+    for i in columns:
+        type = str(types[i])
+        if (type == 'int64' or type == 'float64') and len(set(data[i]))>=10:
+            num_cols.append(i)
+        else:
+            cat_cols.append(i)
+    return num_cols, cat_cols
 
 def main(file,
          sep=None,
@@ -18,6 +32,10 @@ def main(file,
 
     # Read data as a data frame
     data = pd.read_csv(file, sep=sep, comment=comment, index_col=index_col, header=header_row)
+
+    num_cols, cat_cols = identify_types(data)
+    with open('col_types.json', 'w') as f:
+        json.dump({'categorical': cat_cols, 'numerical': num_cols}, f, sort_keys=True, indent='\t')
 
     # Drop columns with missing data
     data.dropna(axis=1, inplace=True)
