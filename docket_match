@@ -1,0 +1,124 @@
+#!/bin/env perl
+$|=1;
+use strict;
+use JSON;
+my $lphbin = "/users/gglusman/proj/DOCKET/data-fingerprints";
+my $cutoff = 0.9;
+my(@files) = @ARGV;
+
+# Collect dockets to be matched
+my @dockets;
+foreach my $file (@files) {
+	if ($file =~ /^@/) {
+		open F, $file;
+		while (<F>) {
+			chomp;
+			my($d) = split /\t/;
+			if (looks_like_a_docket($d)) {
+				push @dockets, $d;
+			} else {
+				print "#doesn't look like a docket: $d\n";
+			}
+		}
+		close F;
+	} else {
+		if (looks_like_a_docket($file)) {
+			push @dockets, $file;
+		} else {
+			print "#doesn't look like a docket: $file\n";
+		}
+	}
+}
+die "Not enough dockets to match\n" unless scalar @dockets>1;
+
+# Step 1: find candidate matches quickly via comparisons of column histogram fingerprints
+my @cand;
+foreach my $i (0..$#dockets-1) {
+	foreach my $j ($i+1..$#dockets) {
+		my(@matching, @seen);
+		open MATCH, "$lphbin/searchLPHs.pl $dockets[$i]/fingerprints/cols_hist_fp.fp $dockets[$j]/fingerprints/cols_hist_fp.fp |";
+		while (<MATCH>) {
+			chomp;
+			my($q, $t, $c) = split /\t/;
+			last if $c<$cutoff;
+			next if $seen[0]{$q};
+			next if $seen[1]{$t};
+			push @matching, [$q, $t];
+			$seen[0]{$q}++;
+			$seen[1]{$t}++;
+		}
+		close MATCH;
+		if (@matching) {
+			$cand[$i][$j] = \@matching;
+		}
+	}
+}
+
+# Step 2: trim candidate matches by computing Jaccards
+foreach my $i (0..$#dockets-1) {
+	next unless defined $cand[$i];
+	my $datai = read_json("$dockets[$i]/data/cols_hist.json.gz");
+	foreach my $j ($i+1..$#dockets) {
+		next unless defined $cand[$i][$j];
+		my $dataj = read_json("$dockets[$j]/data/cols_hist.json.gz");
+		print $dockets[$i], "\n";
+		print $dockets[$j], "\n";
+		print "Columns matching: ", scalar @{$cand[$i][$j]}, "\n";
+		#print join("\t", map {"$_->[0]:$_->[1]"} @{$cand[$i][$j]}), "\n";
+		foreach my $match (@{$cand[$i][$j]}) {
+			my $di = $datai->{$match->[0]};
+			die "nothing in $match->[0]\n" unless keys %$di;
+			my $dj = $dataj->{$match->[1]};
+			die "nothing in $match->[1]\n" unless keys %$dj;
+			my %union = %$di;
+			my %intersection;
+			while (my($key) = each %$di) {
+				$intersection{$key}++ if defined $dj->{$key};
+			}
+			while (my($key) = each %$dj) {
+				$union{$key}++;
+			}
+			my $int_size = scalar keys %intersection;
+			my $union_size = scalar keys %union;
+			my $jaccard = $int_size / $union_size;
+			my $int_of_i = $int_size / scalar keys %$di;
+			my $int_of_j = $int_size / scalar keys %$dj;
+			
+			print join("\t", $match->[0], $match->[1], $jaccard, $int_of_i, $int_of_j), "\n";
+		}
+		print "\n";
+	}
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#########################
+sub read_json {
+	my($file) = @_;
+	my $json;
+	open J, "gunzip -c $file |";
+	while (<J>) {
+		chomp;
+		$json .= $_;
+	}
+	close J;
+	return decode_json($json);
+}
+
+
+sub looks_like_a_docket {
+	my($dir) = @_;
+	
+	return 1 if -d $dir && -d "$dir/analyses" && -d "$dir/fingerprints" && -d "$dir/comparisons" && -d "$dir/visualizations";
+}
+

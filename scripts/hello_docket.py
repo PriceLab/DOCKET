@@ -4,7 +4,7 @@ from sklearn.cluster import AgglomerativeClustering
 
 import common.utilities as utilities
 import common.transform as transform
-from common.maker import DocketMaker
+import common.maker as make
 
 parser = argparse.ArgumentParser()
 
@@ -32,7 +32,7 @@ docket_params = {
     'has_index': str(args.has_index).lower() in ('true', '1')
 }
 
-dm = DocketMaker(**docket_params)
+dm = make.DocketMaker(**docket_params)
 data = dm.file_data
 
 for label, mdata in dm.file_metadata.items():
@@ -59,7 +59,7 @@ for label, mdata in dm.file_metadata.items():
     original_data = [[v for k, v in json_data[header].items()] for header in level1_headers]
 
     # Calculate fingerprints
-    fingerprints = transform.encode_fp(json_data, args.L)
+    fingerprints = make.encode_fp(json_data, args.L)
 
     # Convert to numpy array for analysis
     fp_array = np.array([data for _, data in fingerprints.items()])

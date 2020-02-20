@@ -22,12 +22,13 @@ RUN wget -qO- https://get.nextflow.io | bash \
 && pip install -r /install/requirements.txt
 
 # set perl environment variables
-ENV PERL_PATH=/home/jovyan
-ENV PERL5LIB=$PERL_PATH:$PERL_PATH/lib/perl5:$PERL_PATH/bin:$PERL5LIB
-ENV PATH="$PERL_PATH/bin:$PATH"
+ENV PERL_PATH=/home/jovyan/data-fingerprints
+ENV PERL5LIB=$PERL_PATH:$PERL_PATH/lib/perl5:$PERL_PATH:$PERL5LIB
+ENV PATH="$PERL_PATH:$PATH"
 
+# Commented out because the directory has been committed as data-fingeprints
 # Download only the Perl bin directory from gglusman/data-fingerprints to /home/jovyan
-RUN svn export https://github.com/gglusman/data-fingerprints.git/trunk/bin
+#RUN svn export https://github.com/gglusman/data-fingerprints.git/trunk/bin
 
 COPY . /app
 WORKDIR /app

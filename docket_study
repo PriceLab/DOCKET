@@ -9,6 +9,9 @@ params.docket = "$baseDir/test/test_data.docket"
 params.L = 500
 params.histL = 50
 params.minTriples = 1
+params.skipDuplicates = 1
+params.rowclusters = 3
+params.colclusters = 3
 
 /* interpret parameters */
 infile = file(params.infile)
@@ -27,7 +30,7 @@ process ingest_file {
 		file 'cols_data.json.gz' into colsdata
 		file 'rows_data.json.gz' into rowsdata
 	"""
-	${dbin}/ingest.pl $params.infile $params.format 1
+	${dbin}/ingest.pl $infile $params.format $params.skipDuplicates
 	"""
 }
 /* END SECTION: preparation */
@@ -40,8 +43,10 @@ process column_histograms {
 	publishDir "$docket/data", mode: 'copy'
 	input: file cd from colsdata
 	output: file 'cols_hist.json.gz' into colshist
+	output: file 'cols_types.json.gz' into colstypes
 	"""
-	$dbin/compute_hist.pl $cd | gzip -c > cols_hist.json.gz
+	$dbin/compute_hist.pl $cd cols_hist.json cols_types.json
+	gzip cols_hist.json cols_types.json
 	"""
 }
 process compute_col_hist_fingerprints {
@@ -87,6 +92,7 @@ process compare_col_hist_fingerprints {
 }
 process index_col_hist_fingerprints {
 	/* index fingerprints of column-wise histograms, using annoy */
+	errorStrategy 'ignore'
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file chf from colshistfp
 	output: file 'cols_hist_fp.tree' into colshistfpindex
@@ -97,6 +103,7 @@ process index_col_hist_fingerprints {
 }
 process KNN_col_hist_fingerprints {
 	/* find k nearest neighbors of column-wise histograms, using annoy */
+	errorStrategy 'ignore'
 	publishDir "$docket/comparisons", mode: 'copy'
 	input: file chfi from colshistfpindex
 	input: file chfn from colshistfpnames
@@ -115,8 +122,10 @@ process row_histograms {
 	publishDir "$docket/data", mode: 'copy'
 	input: file rd from rowsdata
 	output: file 'rows_hist.json.gz' into rowshist
+	output: file 'rows_types.json.gz' into rowstypes
 	"""
-	$dbin/compute_hist.pl $rd | gzip -c > rows_hist.json.gz
+	$dbin/compute_hist.pl $rd rows_hist.json rows_types.json
+	gzip rows_hist.json rows_types.json
 	"""
 }
 /* END SECTION: row histogram pipeline */
@@ -170,15 +179,6 @@ process PCA_row_fingerprints {
 	$dbin/pca.py $rfp --L $L | gzip -c > rows_fp.pca.gz
 	"""
 }
-process plot_PCA_row_fingerprints {
-	/* plot PC1-PC2 on fingerprints of rows */
-	publishDir "$docket/visualizations", mode: 'copy'
-	input: file pca from rowsfppca
-	output: file 'rows_fp.pc1_pc2.pdf'
-	"""
-	$dbin/plotpca.py $pca rows_fp.pc1_pc2.pdf
-	"""
-}
 process compare_row_fingerprints {
 	/* compare fingerprints of rows */
 	publishDir "$docket/comparisons", mode: 'copy'
@@ -191,6 +191,7 @@ process compare_row_fingerprints {
 }
 process index_row_fingerprints {
 	/* index fingerprints of rows, using annoy */
+	errorStrategy 'ignore'
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file rfp from rowscentfp
 	output: file 'rows_fp.tree' into rowsfpindex
@@ -201,6 +202,7 @@ process index_row_fingerprints {
 }
 process KNN_row_fingerprints {
 	/* find k nearest neighbors of rows, using annoy */
+	errorStrategy 'ignore'
 	publishDir "$docket/comparisons", mode: 'copy'
 	input: file rfpi from rowsfpindex
 	input: file rfpn from rowsfpnames
@@ -215,8 +217,18 @@ process row_cluster_hier {
     input: file rpca from rowsfppca
     output: file 'rows_hier_clusters.txt.gz' into rows_hier_clust
     """
-    $dbin/hierarchical_clustering.py --source $rpca | uniq | gzip -c > rows_hier_clusters.txt.gz
+    $dbin/hierarchical_clustering.py --source $rpca | gzip -c > rows_hier_clusters.txt.gz
     """
+}
+process plot_PCA_row_fingerprints {
+	/* plot PC1-PC2 on fingerprints of rows */
+	publishDir "$docket/visualizations", mode: 'copy'
+	input: file pca from rowsfppca
+	input: file rhc from rows_hier_clust
+	output: file 'rows_fp.pc1_pc2.pdf'
+	"""
+	$dbin/plotpca.py $pca rows_fp.pc1_pc2.pdf --clustering $rhc --clusters $params.rowclusters
+	"""
 }
 /* END SECTION: row analysis pipeline */
 
@@ -268,15 +280,6 @@ process PCA_col_fingerprints {
 	$dbin/pca.py $cfp --L $L | gzip -c > cols_fp.pca.gz
 	"""
 }
-process plot_PCA_col_fingerprints {
-	/* plot PC1-PC2 on fingerprints of columns */
-	publishDir "$docket/visualizations", mode: 'copy'
-	input: file pca from colsfppca
-	output: file 'cols_fp.pc1_pc2.pdf'
-	"""
-	$dbin/plotpca.py $pca cols_fp.pc1_pc2.pdf
-	"""
-}
 process compare_col_fingerprints {
 	/* compare fingerprints of columns */
 	publishDir "$docket/comparisons", mode: 'copy'
@@ -289,6 +292,7 @@ process compare_col_fingerprints {
 }
 process index_col_fingerprints {
 	/* index fingerprints of columns, using annoy */
+	errorStrategy 'ignore'
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file cfp from colscentfp
 	output: file 'cols_fp.tree' into colsfpindex
@@ -299,6 +303,7 @@ process index_col_fingerprints {
 }
 process KNN_col_fingerprints {
 	/* find k nearest neighbors of columns, using annoy */
+	errorStrategy 'ignore'
 	publishDir "$docket/comparisons", mode: 'copy'
 	input: file cfpi from colsfpindex
 	input: file cfpn from colsfpnames
@@ -313,7 +318,36 @@ process col_cluster_hier {
     input: file cpca from colsfppca
     output: file 'cols_hier_clusters.txt.gz' into cols_hier_clust
     """
-    $dbin/hierarchical_clustering.py --source $cpca | uniq | gzip -c > cols_hier_clusters.txt.gz
+    $dbin/hierarchical_clustering.py --source $cpca | gzip -c > cols_hier_clusters.txt.gz
     """
 }
+process plot_PCA_col_fingerprints {
+	/* plot PC1-PC2 on fingerprints of columns */
+	publishDir "$docket/visualizations", mode: 'copy'
+	input: file pca from colsfppca
+	input: file chc from cols_hier_clust
+	output: file 'cols_fp.pc1_pc2.pdf'
+	"""
+	$dbin/plotpca.py $pca cols_fp.pc1_pc2.pdf --clustering $chc --clusters $params.colclusters
+	"""
+}
+process compute_numeric_associations {
+	/* compute pairwise Spearman correlations between numerical columns */
+	publishDir "$docket/comparisons", mode: 'copy'
+	input: file ctypes from colstypes
+	output: file 'num_assoc.gz'
+	"""
+	$dbin/numerical_associations.py --infile $params.infile --types_file $ctypes --header_row 0 --index_col 0 | gzip -c > num_assoc.gz
+	"""
+}
+process compute_categorical_associations {
+	/* compute pairwise Cramer V and Theil's U between categorical columns */
+	publishDir "$docket/comparisons", mode: 'copy'
+	input: file ctypes from colstypes
+	output: file 'cat_assoc.gz'
+	"""
+	$dbin/categorical_associations.py --infile $params.infile --types_file $ctypes --header_row 0 --index_col 0 | gzip -c > cat_assoc.gz
+	"""
+}
+
 /* END SECTION: column analysis pipeline */

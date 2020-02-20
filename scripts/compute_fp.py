@@ -3,7 +3,7 @@
 import argparse
 
 import common.file_io as io
-import common.transform as transform
+import common.maker as make
 import common.utilities as util
 
 
@@ -14,7 +14,7 @@ def main(file, length=100, out='fp_out.json'):
     data = io.load_json(file)
 
     # Calculate fingerprints
-    data_fp = transform.encode_fp(data, length)
+    data_fp = make.encode_fp(data, length)
 
     # Convert numpy arrays to lists for conversion to json
     data_fp = {k: v.tolist() for k, v in data_fp.items()}
