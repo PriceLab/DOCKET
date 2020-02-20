@@ -40,6 +40,7 @@ foreach my $id (sort {$a<=>$b || $a cmp $b} keys %$data) {
 	}
 	my @v;
 	push @v, @{$fp->{$_}} foreach sort {$a<=>$b} keys %$fp;
-	$id =~ s/[^A-Z0-9_\.\-\=,\+\*:;\@\^\`\|\~]+//gi;
+	$id =~ s/\t/ /g;
+	#$id =~ s/[^A-Z0-9_\.\-\=,\+\*:;\@\^\`\|\~]+//gi;
 	print join("\t", $id, $FP->{'statements'}, map {sprintf("%.${decimals}f", $_)} @v), "\n";
 }
