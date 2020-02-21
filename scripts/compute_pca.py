@@ -10,14 +10,14 @@ import common.utilities as util
 def main(file, out='cols_data_pca.pca.gz', n_comp=20):
     assert isinstance(file, str)
 
-    # Load fingerprint data from .json or .json.gz file
-    data = pd.read_json(file)
+    # Load data on which to compute pca
+    data = pd.read_table(file, index_col=0, header=None)
 
-    # Use column headers as labels
-    labels = data.columns
+    # Use data index as labels
+    labels = data.index
 
-    # Get data as numpy array and transpose
-    values = data.values.transpose()
+    # Get data as numpy array
+    values = data.values
 
     # Normalize data and perform PCA
     values = StandardScaler().fit_transform(values)
