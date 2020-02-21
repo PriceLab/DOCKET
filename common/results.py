@@ -34,10 +34,10 @@ def plot_scatter_projections(data, labels):
     plt.show()
 
 
-def load_enrichment_results(file):
+def load_enrichment_results(file, min_frac_diff=0.2, p_val_cutoff=0.01):
     # Load and filter data
     data = pd.read_table(file, index_col=0, dtype={'cluster_id': str})
-    data = filter_enrichment_results(data)
+    data = filter_enrichment_results(data, min_frac_diff, p_val_cutoff)
 
     # Set multi-index with cluster group as level 1 and cluster number as level 2
     new_index = np.array([s.split('.') for s in data.cluster_id])

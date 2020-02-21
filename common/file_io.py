@@ -76,15 +76,25 @@ def write_json(data, out_file):
 
 
 # Load configuration for handling file I/O and preprocessing
-def load_io_config(config_path, base_dir=None):
-    # Path to configuration file
-    config_path = config_path if base_dir is None else f'{base_dir}/{config_path}'
+def load_io_config(file_path=None, config_path=None, base_dir=None):
+
+    # Generate or load file I/O configuration
+    if isinstance(file_path, str):
+        config = '{"f1": {"path": "' + file_path + \
+                 '"}, "default": {"sep": "\\t", "index_col": 0, "header": 0}}'
+        config = json.loads(config)
+    elif isinstance(config_path, str):
+        # Prepend base directory path, if provided
+        config_path = config_path if base_dir is None else f'{base_dir}/{config_path}'
+        config = pd.read_json(config_path)
+    else:
+        print('Error: No valid file path was provided! File load returned None.')
+        return None
 
     # Specify full list of file load settings
     index = ['path', 'sep', 'index_col', 'header']
 
     # Load information about files to read and preprocess
-    config = pd.read_json(config_path)
     config = pd.DataFrame(config, index=index)
     file_ids = list(config.columns)
     if 'default' in file_ids:

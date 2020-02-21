@@ -3,13 +3,13 @@
 scripts = "$baseDir/scripts"
 
 /* Parameter defaults */
-params.file_config = 'data/iris_input.config'
+params.infile = 'data/iris_tab.data'
 params.docket = 'test_enrichment.docket'
 params.pca_n = 50
 params.fill_na = true
 
 /* local variable names */
-file_config = params.file_config
+infile = file(params.infile)
 docket = file(params.docket)
 pca_n = params.pca_n
 fill_na = params.fill_na
@@ -19,18 +19,16 @@ process preprocess_input {
     publishDir docket, mode: 'copy'
 
     output:
-    file 'rows_numeric_data.json.gz' into rows_numdata
-    file 'cols_numeric_data.json.gz' into cols_numdata
+    file 'rows_numeric_data.txt.gz' into rows_numdata
+    file 'cols_numeric_data.txt.gz' into cols_numdata
     file 'cols_attribute_data.json.gz' into cols_attrdata
     file 'cols_attribute_counts.json.gz' into cols_attrcounts
 
 	"""
 	${scripts}/preprocess_input.py \
-	  --file_config $file_config \
-	  --base_dir $baseDir \
-	  --fill_na $fill_na \
-	  --rows_data rows_numeric_data.json.gz \
-	  --cols_data cols_numeric_data.json.gz \
+	  --file $infile \
+	  --rows_data rows_numeric_data.txt.gz \
+	  --cols_data cols_numeric_data.txt.gz \
 	  --attr_data cols_attribute_data.json.gz \
 	  --attr_counts cols_attribute_counts.json.gz
 	"""
