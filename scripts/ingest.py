@@ -3,7 +3,7 @@
 import json
 import argparse
 import common.file_io as io
-import common.transform as transform
+import common.preprocess as preprocess
 import common.utilities as util
 
 
@@ -22,8 +22,8 @@ def main(file, comment=None, sep=None,
     col_labels = metadata['col_labels']
 
     # Get data row-wise and column-wise in json format
-    rowwise_data = transform.tabular2json(data, row_labels, col_labels, by_col=False, pad_rows=True)
-    colwise_data = transform.tabular2json(data, row_labels, col_labels, by_col=True, pad_rows=True)
+    rowwise_data = preprocess.tabular2json(data, row_labels, col_labels, by_col=False, pad_rows=True)
+    colwise_data = preprocess.tabular2json(data, row_labels, col_labels, by_col=True, pad_rows=True)
 
     with open(rows_out, 'w') as f1:
         f1.write(json.dumps(rowwise_data))

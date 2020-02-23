@@ -1,20 +1,130 @@
 import numpy as np
 import pandas as pd
+import common.file_io as io
+
+
+# -------------------------------------------------------------------------
+# pad_tabular_data
+# Make sure rows of tabular data all contain the same number of items.
+# Data are expected as a list of lists. If pad_size is None, pad all rows to
+# the size of the one with the most items. If pad_value is None, pad rows
+# with 0. (float).
+#
+# -------------------------------------------------------------------------
+def pad_tabular_data(data, pad_size=None, pad_value=None):
+    # Default pad size is length of longest row
+    if pad_size is None:
+        pad_size = max([len(row) for row in data])
+
+    # Default pad value is zero
+    if pad_value is None:
+        pad_value = 0.
+
+    # Utility function to pad a single row
+    def pad_row(row, size, value):
+        return row + [value] * (size - len(row))
+
+    data = [pad_row(row, pad_size, pad_value) for row in data]
+    return data
+
+
+# -------------------------------------------------------------------------
+# tabular2json
+# Convert tabular (list of lists) data to json (dictionary of dictionaries).
+# If by_row is True, first-level keys in the resulting dictionary are row
+# labels and second-level keys are column labels. Otherwise, this is
+# reversed (first-level keys are column labels and second-level keys are
+# row labels)
+#
+# -------------------------------------------------------------------------
+def tabular2json(data, row_labels, col_labels, by_col=False, pad_rows=False):
+    # json will have level 1 and level 2 labels
+    level1_labels = row_labels
+    level2_labels = col_labels
+
+    if isinstance(data, np.ndarray):
+        data = data.astype(str).tolist()
+
+    if pad_rows:
+        # Pad rows to size of longest row
+        pad_size = max([len(row) for row in data])
+        data = pad_tabular_data(data, pad_size, pad_value='')
+
+    # If converting to json by column, data must be transposed
+    if by_col:
+        # Must not proceed if rows are different lengths
+        if len(set([len(row) for row in data])) > 1:
+            print('Warning: Rows are different lengths! Cannot convert to JSON column-wise.')
+            return {}
+
+        level1_labels = col_labels
+        level2_labels = row_labels
+        data = [[data[i][j] for i in range(len(level2_labels))] for j in range(len(level1_labels))]
+
+    second_level = [{str(k): v for k, v in list(zip(level2_labels, data[i]))} for i in range(len(level1_labels))]
+    json_data = {str(level1_labels[i]): d for i, d in enumerate(second_level)}
+
+    return json_data
+
+
+# Convenience function to apply string-related preprocessing steps
+def string_preprocess(value, to_lower, replace_ws):
+    value = value.lower() if to_lower else value
+    value = value if replace_ws is None else replace_ws.join(value.split())
+    return value
+
+
+# Convenience function to collapse dict values to counts
+def collapse_unique(key, value, based_on=None, lower=False, replace_ws=None, collapse_singletons=False):
+    assert isinstance(value, dict)
+    if based_on is not None:
+        assert isinstance(based_on, dict)
+
+    # Get list of values for which to get counts
+    candidate_values = list(set(value.values()) if based_on is None else set(based_on[key].keys()))
+    candidate_values = [string_preprocess(val, lower, replace_ws) for val in candidate_values]
+    candidate_values.sort()
+
+    # Get list of value counts
+    val_list = [string_preprocess(val, lower, replace_ws) for val in list(value.values())]
+    val_counts = [val_list.count(s) for s in candidate_values]
+
+    if collapse_singletons:
+        val_counts = {s: val_counts[i] for i, s in enumerate(candidate_values) if val_counts[i] > 1}
+        len_diff = len(candidate_values) - len(val_counts)
+        if len_diff > 0:
+            key_other = key.lower() if lower else key
+            val_counts[f'{key_other}.other'] = len_diff
+    else:
+        other_count = 0 if based_on is None else int(len(val_list) - np.array(val_counts).sum())
+        val_counts = {s: val_counts[i] for i, s in enumerate(candidate_values)}
+        if other_count > 0:
+            key_other = key.lower() if lower else key
+            val_counts[f'{key_other}.other'] = other_count
+
+    return val_counts
+
+
+# Generate a dictionary of value occurrence counts
+def generate_occurrence_counts(data, based_on=None, to_lower=False,
+                               replace_whitespace=None, collapse_singletons=False):
+    assert(isinstance(data, dict))
+
+    # Generate occurrence counts
+    def collapse_fnc(k, v): return collapse_unique(k, v, based_on, to_lower, replace_whitespace, collapse_singletons)
+    counts = {k: collapse_fnc(k, v) for k, v in data.items()}
+
+    return counts
 
 
 # Load data and remove low-information columns
 # config: Series containing file information (path, separator, etc)
 # filter_frac: Remove columns for which fraction of missing values is >= 1 - filter_frac
-def load_and_eliminate(config, filter_frac=0.2, base_dir=None):
-    # Get file load parameters
-    path, sep, index_col, header = config
-    path = path if base_dir is None else f'{base_dir}/{path}'
-    sep = ',' if pd.isnull(sep) else sep
-    index_col = None if pd.isnull(index_col) else index_col
-    header = None if pd.isnull(header) else header
+def load_and_eliminate(config, base_dir=None, filter_frac=None):
+    filter_frac = 0.0 if filter_frac is None else filter_frac
 
-    # Load data
-    data = pd.read_csv(path, sep=sep, index_col=index_col, header=header)
+    # Load file data from configuration
+    data = io.load_file_data_from_config(config, base_dir)
     nrows, ncols = data.shape
 
     # Get information to be used in eliminating low-information columns
@@ -106,10 +216,6 @@ def preprocess_and_split(df, frac_threshold=0.01, fill_na=True):
     # Split into numeric and object dataframes
     df_numeric = df.select_dtypes('number')
     df_object = df.select_dtypes('object')
-
-    print(df_numeric.shape)
-    print(df_object.shape)
-    print(df.shape)
 
     # Sum of dimensions of the split dataframes must equal the dimensions of the original dataframe
     assert(df_numeric.shape[0] == df_object.shape[0] == df.shape[0])

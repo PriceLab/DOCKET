@@ -1,5 +1,32 @@
 import numpy as np
 import pandas as pd
+import common.preprocess as preprocess
+
+
+# Get occurrence counts for all attributes and parent/children trios at all branch points in the cluster hierarchy
+def get_parent_child_occurrence_counts(cluster_id, source_data, cluster_members_data):
+    child1_ids, child2_ids = cluster_members_data[cluster_id]['child1'], cluster_members_data[cluster_id]['child2']
+    parent_ids = cluster_members_data[cluster_id]['parent']
+
+    # Get occurrence counts based on the parent cluster
+    parent_data = source_data.loc[parent_ids]
+    parent_data = preprocess.tabular2json(parent_data.values, parent_data.index, parent_data.columns, by_col=True)
+    parent_occurrence_counts = preprocess.generate_occurrence_counts(
+        parent_data, based_on=None, to_lower=True, replace_whitespace='-', collapse_singletons=True)
+
+    # Get occurrence counts for child1 cluster data
+    child1_data = source_data.loc[child1_ids]
+    child1_data = preprocess.tabular2json(child1_data.values, child1_data.index, child1_data.columns, by_col=True)
+    child1_occurrence_counts = preprocess.generate_occurrence_counts(
+        child1_data, based_on=parent_occurrence_counts, to_lower=True, replace_whitespace='-')
+
+    # Get occurrence counts for child2 cluster data
+    child2_data = source_data.loc[child2_ids]
+    child2_data = preprocess.tabular2json(child2_data.values, child2_data.index, child2_data.columns, by_col=True)
+    child2_occurrence_counts = preprocess.generate_occurrence_counts(
+        child2_data, based_on=parent_occurrence_counts, to_lower=True, replace_whitespace='-')
+
+    return parent_occurrence_counts, child1_occurrence_counts, child2_occurrence_counts
 
 
 # Convenience function to determine if count is in proper range
@@ -137,8 +164,7 @@ def get_enrichment_scores(attributes_to_use, columns_to_keep, attribute_data,
 
     # Get cluster assignments for individuals
     cl_assignments = pd.read_csv(cluster_data_file, sep='\t', index_col=0)
-    cl_assignments = cl_assignments.values[-10:].tolist()
-    cl_assignments.reverse()
+    cl_assignments = cl_assignments.values[:10].tolist()
 
     # Get list of clusters that are within a specified size range
     clusters = [to_cluster_id(i, cl, cnt) for i, cl_list in enumerate(cl_assignments)
