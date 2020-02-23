@@ -3,7 +3,6 @@
 import argparse
 import common.file_io as io
 import common.preprocess as preprocess
-import common.transform as transform
 import common.utilities as util
 
 
@@ -37,9 +36,9 @@ def main(file=None,
     data_object.to_json(attr_data, orient='columns')
 
     # Save counts of value occurrences (in json format)
-    data_object = transform.tabular2json(data_object.values, data_object.index, data_object.columns,
-                                         by_col=True, pad_rows=False)
-    data_object = transform.generate_occurrence_counts(data_object)
+    data_object = preprocess.tabular2json(data_object.values, data_object.index, data_object.columns,
+                                          by_col=True, pad_rows=False)
+    data_object = preprocess.generate_occurrence_counts(data_object)
     io.write_json(data_object, attr_counts)
 
 

@@ -27,6 +27,7 @@ process preprocess_input {
 	"""
 	${scripts}/preprocess_input.py \
 	  --file $infile \
+	  --fill_na $fill_na \
 	  --rows_data rows_numeric_data.txt.gz \
 	  --cols_data cols_numeric_data.txt.gz \
 	  --attr_data cols_attribute_data.json.gz \
@@ -61,12 +62,14 @@ process cluster_numeric_hier {
     file rpca from rowspca
 
     output:
-    file 'rows_hier_clusters.txt' into rows_hier_clust
+    file 'cluster_labels.txt.gz' into rows_hier_clust
+    file 'cluster_members.json.gz' into row_clust_members
 
     """
     ${scripts}/cluster_hier.py \
       --source $rpca \
-      --out rows_hier_clusters.txt
+      --cl_labels_out cluster_labels.txt.gz \
+      --cl_members_out cluster_members.json.gz
     """
 }
 

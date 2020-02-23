@@ -112,6 +112,20 @@ def load_io_config(file_path=None, config_path=None, base_dir=None):
     return config
 
 
+# Load data from a file based on specified configuration (assumes that load_io_config has been called)
+def load_file_data_from_config(config, base_dir=None):
+    # Get file load parameters
+    path, sep, index_col, header = config
+    path = path if base_dir is None else f'{base_dir}/{path}'
+    sep = ',' if pd.isnull(sep) else sep
+    index_col = None if pd.isnull(index_col) else index_col
+    header = None if pd.isnull(header) else header
+
+    # Load and return data
+    data = pd.read_csv(path, sep=sep, index_col=index_col, header=header)
+    return data
+
+
 # -------------------------------------------------------------------------
 # load_data
 # Load data from the specified file path.

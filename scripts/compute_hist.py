@@ -2,7 +2,7 @@
 
 import argparse
 import common.file_io as io
-import common.transform as transform
+import common.preprocess as preprocess
 
 
 def main(file, out='hist_out.json'):
@@ -12,7 +12,8 @@ def main(file, out='hist_out.json'):
     data = io.load_json(file)
 
     # Generate "histogram" of occurrence counts as a dictionary
-    data_counts = transform.generate_occurrence_counts(data)
+    data_counts = preprocess.generate_occurrence_counts(data, to_lower=True,
+                                                        replace_whitespace='-', collapse_singletons=True)
 
     # Write data to .json or .json.gz file format
     io.write_json(data_counts, out)

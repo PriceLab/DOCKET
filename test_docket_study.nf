@@ -3,9 +3,9 @@ dbin = "$baseDir/scripts"
 lphbin = "$baseDir/data-fingerprints"
 
 /* parameter defaults */
-params.infile = "$baseDir/data/iris_tab.data"
+params.infile = "$baseDir/test/test_data.txt"
 params.format = 'table'
-params.docket = "$baseDir/data/iris_data.docket"
+params.docket = "$baseDir/test/test_data.docket"
 params.L = 500
 params.histL = 50
 params.minTriples = 1
@@ -13,15 +13,11 @@ params.skipDuplicates = 1
 params.rowclusters = 3
 params.colclusters = 3
 
-params.pca_n = 20
-
 /* interpret parameters */
 infile = file(params.infile)
 docket = file(params.docket)
 L = params.L
 histL = params.histL
-
-pca_n = params.pca_n
 
 
 /* SECTION: preparation */
@@ -357,108 +353,42 @@ process compute_categorical_associations {
 /* END SECTION: column analysis pipeline */
 
 
-
 /* ENRICHMENT ANALYSIS */
 
-process preprocess_input {
-    /* Pre-process input file to get attribute data for enrichment analysis */
-    publishDir docket, mode: 'copy'
-
-    output:
-    file 'rows_numeric_data.txt.gz' into rows_numdata
-    file 'cols_numeric_data.txt.gz' into cols_numdata
-    file 'cols_attribute_data.json.gz' into cols_attrdata
-    file 'cols_attribute_counts.json.gz' into cols_attrcounts
-
-	"""
-	${dbin}/preprocess_input.py \
-	  --file $infile \
-	  --rows_data rows_numeric_data.txt.gz \
-	  --cols_data cols_numeric_data.txt.gz \
-	  --attr_data cols_attribute_data.json.gz \
-	  --attr_counts cols_attribute_counts.json.gz
-	"""
-}
-
-process compute_fp_pca {
-    /* Compute PCA on row-wise fingerprints */
-    publishDir docket, mode: 'copy'
-
-    input:
-    /* Row-wise fingerprints */
-    file rowsfp from rowsallfp
-
-    output:
-    file 'rows_pca.pca.gz' into rowspca
-
-    """
-    ${dbin}/compute_pca.py \
-      --source $rowsfp \
-      --out rows_pca.pca.gz \
-      --n_comp $pca_n
-    """
-}
-
-process cluster_numeric_hier {
+process row_cluster_hier_v2 {
     /* Compute row-wise clustering */
-    publishDir docket, mode: 'copy'
+    publishDir "$docket/analyses", mode: 'copy'
 
     input:
-    file rpca from rowspca
+    file rpca from rowsfppca
 
     output:
-    file 'rows_hier_clusters.txt' into rows_hier_clust_2
+    file 'cluster_labels.txt.gz' into rows_hclust_labels
+    file 'cluster_members.json.gz' into rows_hclust_members
 
     """
-    ${dbin}/cluster_hier.py \
+    $dbin/cluster_hier.py \
       --source $rpca \
-      --out rows_hier_clusters.txt
+      --cl_labels_out cluster_labels.txt.gz \
+      --cl_members_out cluster_members.json.gz
     """
 }
 
-process compute_enrich {
-    /* Compute enrichment */
-    publishDir docket, mode: 'copy'
+process pairwise_occurrence_counts {
+    /* Get occurrence counts for all attributes and parent/children trios for branch points in cluster hierarchy */
+    publishDir "$docket/analyses", mode: 'copy'
 
     input:
-    file cattrdata from cols_attrdata
-    file cattrcnts from cols_attrcounts
-    file rhc from rows_hier_clust_2
+    file cdata from colsdata
+    file rhc_members from rows_hclust_members
 
     output:
-    file 'enrichment_results.txt'
+    file 'pairwise_occurrence_counts.json.gz' into occur_counts
 
     """
-    ${dbin}/compute_enrich.py \
-      --attr_data $cattrdata \
-      --attr_counts $cattrcnts \
-      --cluster_data $rhc \
-      --out enrichment_results.txt
-    """
-}
-
-process copy_code {
-    /* Copy code needed for visualizing results */
-    publishDir "$docket/code", mode: 'copy'
-
-    output:
-    file '__init__.py'
-    file 'results.py'
-
-    """
-    cp '$baseDir/common/results.py' .
-    touch __init__.py
-    """
-}
-
-process copy_notebooks {
-    /* Copy Jupyter notebook for visualizing results */
-    publishDir docket, mode: 'copy'
-
-    output:
-    file 'visualize-enrichment-test-docket-study.ipynb'
-
-    """
-    cp '$baseDir/notebooks/visualize-enrichment-test-docket-study.ipynb' .
+    $dbin/pairwise_occurrence_counts.py \
+      --source $cdata \
+      --cluster_members $rhc_members \
+      --counts_out pairwise_occurrence_counts.json.gz
     """
 }

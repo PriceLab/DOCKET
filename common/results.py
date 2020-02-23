@@ -34,9 +34,11 @@ def plot_scatter_projections(data, labels):
     plt.show()
 
 
-def load_enrichment_results(file, min_frac_diff=0.2, p_val_cutoff=0.01):
-    # Load and filter data
+def load_enrichment_results(file, min_frac_diff=None, p_val_cutoff=None):
+    # Load enrichment results
     data = pd.read_table(file, index_col=0, dtype={'cluster_id': str})
+
+    # Optionally filter enrichment results on fraction difference and/or significance (p-value)
     data = filter_enrichment_results(data, min_frac_diff, p_val_cutoff)
 
     # Set multi-index with cluster group as level 1 and cluster number as level 2
@@ -49,14 +51,16 @@ def load_enrichment_results(file, min_frac_diff=0.2, p_val_cutoff=0.01):
     return data.sort_index()
 
 
-def filter_enrichment_results(data, min_frac_diff=0.2, p_val_cutoff=0.01):
-    # Filter on p-value cutoff
-    f1 = data['quantile'].values < p_val_cutoff
-    f2 = data['quantile'].values > 1. - p_val_cutoff
-    data = data.loc[np.logical_or(f1, f2)]
+def filter_enrichment_results(data, min_frac_diff=None, p_val_cutoff=None):
+    # Optionally, filter on p-value cutoff
+    if p_val_cutoff is not None:
+        f1 = data['quantile'].values < p_val_cutoff
+        f2 = data['quantile'].values > 1. - p_val_cutoff
+        data = data.loc[np.logical_or(f1, f2)]
 
-    # Filter on difference between total fraction and cluster fraction
-    f = abs(data['total_fraction'] - data['attr_value_fraction']) > min_frac_diff
-    data = data.loc[f]
+    # Optionally, filter on difference between total fraction and cluster fraction
+    if min_frac_diff is not None:
+        f = abs(data['total_fraction'] - data['attr_value_fraction']) > min_frac_diff
+        data = data.loc[f]
 
     return data
