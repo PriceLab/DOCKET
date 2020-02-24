@@ -392,3 +392,21 @@ process pairwise_occurrence_counts {
       --counts_out pairwise_occurrence_counts.json.gz
     """
 }
+
+process generate_enrichment_results {
+    /* Calculate and write to output enrichment results */
+    publishDir "$docket/analyses/enrichment", mode: 'copy'
+
+    input:
+    file cl_members from rows_hclust_members
+    file counts from occur_counts
+
+    output:
+    file 'enrich_results_*.txt.gz' into enrichment_results
+
+    """
+    $dbin/compute_chi_squared.py \
+      --counts_file $counts \
+      --cluster_members $cl_members
+    """
+}
