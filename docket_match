@@ -66,6 +66,7 @@ foreach my $i (0..$#dockets-1) {
 		print "Columns matching: ", scalar @{$cand[$i][$j]}, "\n";
 		#print join("\t", map {"$_->[0]:$_->[1]"} @{$cand[$i][$j]}), "\n";
 		foreach my $match (@{$cand[$i][$j]}) {
+			next if $match->[0] eq $match->[1];
 			my $di = $datai->{$match->[0]};
 			die "nothing in $match->[0]\n" unless keys %$di;
 			my $dj = $dataj->{$match->[1]};
@@ -84,6 +85,7 @@ foreach my $i (0..$#dockets-1) {
 			my $int_of_i = $int_size / scalar keys %$di;
 			my $int_of_j = $int_size / scalar keys %$dj;
 			
+			next unless $jaccard>0.1 || $int_of_i>0.1 || $int_of_j>0.1;
 			print join("\t", $match->[0], $match->[1], $jaccard, $int_of_i, $int_of_j), "\n";
 		}
 		print "\n";
