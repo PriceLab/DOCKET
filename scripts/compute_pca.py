@@ -2,32 +2,34 @@
 
 import argparse
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-import common.file_io as io
 import common.utilities as util
 
 
-def main(file, out='pca_out.json', n_comp=10):
+def main(file, out='cols_data_pca.pca.gz', n_comp=20):
     assert isinstance(file, str)
 
-    # Load fingerprint data from .json or .json.gz file
-    data = pd.read_json(file)
+    # Load data on which to compute pca
+    data = pd.read_table(file, index_col=0, header=None)
 
-    # Use column headers as labels
-    labels = data.columns
+    # Use data index as labels
+    labels = data.index
 
-    # Get data as numpy array and transpose
-    values = data.values.transpose()
+    # Get data as numpy array
+    values = data.values
 
-    # Perform PCA
+    # Normalize data and perform PCA
+    values = StandardScaler().fit_transform(values)
     pca = PCA(n_components=min(n_comp, min(values.shape)))
     weights = pca.fit_transform(values)
 
-    # Write PCA results to .json or .json.gz file format
-    data_out = {k: v.tolist() for k, v in zip(labels, weights)}
-    io.write_json(data_out, out)
+    # Write PCA results to tabular file format
+    data_out_df = pd.DataFrame({k: v.tolist() for k, v in zip(labels, weights)})
+    data_out_df = data_out_df.T
+    data_out_df.to_csv(out, sep='\t', header=False)
 
-    return data_out
+    return data_out_df
 
 
 if __name__ == '__main__':
@@ -36,8 +38,8 @@ if __name__ == '__main__':
 
     # File IO arguments
     parser.add_argument('--source', help='File to load')
-    parser.add_argument('--out', help='Output file for PCA results', default='pca_out.json')
-    parser.add_argument('--n_comp', help='Number of PCA components', default=10)
+    parser.add_argument('--out', help='Output file for PCA results', default='cols_data_pca.pca.gz')
+    parser.add_argument('--n_comp', help='Number of PCA components', default=20)
     args = parser.parse_args()
 
     main(args.source,

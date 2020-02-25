@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 
 import common.utilities as utilities
-import common.transform as transform
+import common.preprocess as preprocess
 import common.maker as make
 
 parser = argparse.ArgumentParser()
@@ -51,7 +51,7 @@ for label, mdata in dm.file_metadata.items():
     # Convert tabular to json
     current_data = data[label]
     current_data = [[val.lower() for val in row] for row in current_data]
-    json_data = transform.tabular2json(current_data, mdata['row_labels'], mdata['col_labels'])
+    json_data = preprocess.tabular2json(current_data, mdata['row_labels'], mdata['col_labels'])
 
     # Get original data (for later use)
     level1_headers = list(json_data.keys())

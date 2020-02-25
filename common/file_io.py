@@ -9,7 +9,7 @@ import os
 import re
 import gzip
 import json
-import argparse
+import pandas as pd
 
 
 # -------------------------------------------------------------------------
@@ -73,6 +73,57 @@ def write_json(data, out_file):
     else:
         with open(out_file, 'w') as f:
             f.write(json.dumps(data))
+
+
+# Load configuration for handling file I/O and preprocessing
+def load_io_config(file_path=None, config_path=None, base_dir=None):
+
+    # Generate or load file I/O configuration
+    if isinstance(file_path, str):
+        config = '{"f1": {"path": "' + file_path + \
+                 '"}, "default": {"sep": "\\t", "index_col": 0, "header": 0}}'
+        config = json.loads(config)
+    elif isinstance(config_path, str):
+        # Prepend base directory path, if provided
+        config_path = config_path if base_dir is None else f'{base_dir}/{config_path}'
+        config = pd.read_json(config_path)
+    else:
+        print('Error: No valid file path was provided! File load returned None.')
+        return None
+
+    # Specify full list of file load settings
+    index = ['path', 'sep', 'index_col', 'header']
+
+    # Load information about files to read and preprocess
+    config = pd.DataFrame(config, index=index)
+    file_ids = list(config.columns)
+    if 'default' in file_ids:
+        defaults = pd.Series(config['default'], index=index)
+        config.drop('default', axis=1, inplace=True)
+        file_ids.remove('default')
+    else:
+        defaults = pd.Series(index=index)
+
+    # Expand imported configuration with default values
+    for file_id in file_ids:
+        options = [opt2 if pd.isnull(opt1) else opt1 for opt1, opt2 in zip(config[file_id], defaults)]
+        config[file_id] = pd.Series(options, index=index)
+
+    return config
+
+
+# Load data from a file based on specified configuration (assumes that load_io_config has been called)
+def load_file_data_from_config(config, base_dir=None):
+    # Get file load parameters
+    path, sep, index_col, header = config
+    path = path if base_dir is None else f'{base_dir}/{path}'
+    sep = ',' if pd.isnull(sep) else sep
+    index_col = None if pd.isnull(index_col) else index_col
+    header = None if pd.isnull(header) else header
+
+    # Load and return data
+    data = pd.read_csv(path, sep=sep, index_col=index_col, header=header)
+    return data
 
 
 # -------------------------------------------------------------------------
@@ -165,21 +216,3 @@ def load_data(file_path, sep=None, skip_rows=None, skip_cols=0, has_header=False
     metadata['skipped_lines'] = skipped_lines
 
     return data, metadata
-
-
-def main(file):
-    assert isinstance(file, str)
-    data, metadata = load_data(file, skip_rows='#')
-    print(json.dumps(data))
-    return json.dumps(data)
-
-
-if __name__ == '__main__':
-    # Parse command-line inputs
-    load_parser = argparse.ArgumentParser()
-
-    # File IO arguments
-    load_parser.add_argument('--source', help='File to load')
-    load_args = load_parser.parse_args()
-
-    main(load_args.source)

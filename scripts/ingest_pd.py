@@ -2,9 +2,10 @@
 
 import argparse
 import pandas as pd
-import common.transform as transform
+import common.preprocess as preprocess
 import common.file_io as io
 import json
+
 
 def identify_types(data):
     num_cols = []
@@ -19,6 +20,7 @@ def identify_types(data):
         else:
             cat_cols.append(i)
     return num_cols, cat_cols
+
 
 def main(file,
          sep=None,
@@ -51,8 +53,8 @@ def main(file,
     data = data.values
 
     # Get data row-wise and column-wise in json format
-    rowwise_data = transform.tabular2json(data, row_labels, col_labels, by_col=False, pad_rows=False)
-    colwise_data = transform.tabular2json(data, row_labels, col_labels, by_col=True, pad_rows=True)
+    rowwise_data = preprocess.tabular2json(data, row_labels, col_labels, by_col=False, pad_rows=False)
+    colwise_data = preprocess.tabular2json(data, row_labels, col_labels, by_col=True, pad_rows=True)
 
     # Write row-wise json
     io.write_json(rowwise_data, rows_out)

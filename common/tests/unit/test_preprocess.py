@@ -1,8 +1,9 @@
 """
-This file contains unit tests for functions defined in common/transform.py
+This file contains unit tests for functions defined in common/preprocess.py
 """
+
 import pytest
-import common.transform as transform
+import common.preprocess as preprocess
 
 # Input for pad_tabular and tabular2json tests
 data = [['A'], ['B', 'C'], ['D', 'E', 'F']]
@@ -27,7 +28,7 @@ def test_pad_tabular(input_data, size, value, expected_result):
     def equal(actual, expected):
         return all([all([v1 == v2 for v1, v2 in zip(list1, list2)]) for list1, list2 in zip(actual, expected)])
 
-    actual_result = transform.pad_tabular_data(input_data, size, value)
+    actual_result = preprocess.pad_tabular_data(input_data, size, value)
     assert equal(actual_result, expected_result)
 
 
@@ -64,5 +65,5 @@ def test_tabular2json(input_data, row_labels, col_labels, by_col, pad_rows, expe
             all([set(v1.values()) == set(v2.values()) for v1, v2 in zip(actual.values(), expected.values())])
         return inputs_equal
 
-    actual_result = transform.tabular2json(input_data, row_labels, col_labels, by_col, pad_rows)
+    actual_result = preprocess.tabular2json(input_data, row_labels, col_labels, by_col, pad_rows)
     assert equal(actual_result, expected_result)
