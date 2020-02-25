@@ -151,6 +151,15 @@ process trim_row_fingerprints {
 	$dbin/filterTable.pl $rfp 1 $params.minTriples | gzip -c > rows_fp.raw.gz
 	"""
 }
+process PCA_row_fingerprints {
+	/* compute PCA on fingerprints of rows */
+	publishDir "$docket/analyses", mode: 'copy'
+	input: file rfp from rowstrimfp
+	output: file 'rows_fp.pca.gz' into rowsfppca
+	"""
+	$dbin/pca.py $rfp --L $L | gzip -c > rows_fp.pca.gz
+	"""
+}
 process center_row_fingerprints {
 	/* center row-wise fingerprints */
 	publishDir "$docket/fingerprints", mode: 'copy'
@@ -170,15 +179,6 @@ process serialize_cent_row_fingerprints {
 	$lphbin/serializeLPH.pl rows_fp $L 1 0 $rfp
 	"""
 }
-process PCA_row_fingerprints {
-	/* compute PCA on fingerprints of rows */
-	publishDir "$docket/analyses", mode: 'copy'
-	input: file rfp from rowscentfp
-	output: file 'rows_fp.pca.gz' into rowsfppca
-	"""
-	$dbin/pca.py $rfp --L $L | gzip -c > rows_fp.pca.gz
-	"""
-}
 process compare_row_fingerprints {
 	/* compare fingerprints of rows */
 	publishDir "$docket/comparisons", mode: 'copy'
@@ -193,7 +193,7 @@ process index_row_fingerprints {
 	/* index fingerprints of rows, using annoy */
 	errorStrategy 'ignore'
 	publishDir "$docket/fingerprints", mode: 'copy'
-	input: file rfp from rowscentfp
+	input: file rfp from rowstrimfp
 	output: file 'rows_fp.tree' into rowsfpindex
 	output: file 'rows_fp.names' into rowsfpnames
 	"""
@@ -215,9 +215,10 @@ process row_cluster_hier {
     /* Compute row-wise clustering */
     publishDir "$docket/analyses", mode: 'copy'
     input: file rpca from rowsfppca
+    output: file 'rows_hier_linkage.txt.gz' into rows_hier_linkage
     output: file 'rows_hier_clusters.txt.gz' into rows_hier_clust
     """
-    $dbin/hierarchical_clustering.py --source $rpca | gzip -c > rows_hier_clusters.txt.gz
+    $dbin/hierarchical_clustering.py --source $rpca --linkage_out rows_hier_linkage.txt.gz | gzip -c > rows_hier_clusters.txt.gz
     """
 }
 process plot_PCA_row_fingerprints {
@@ -252,6 +253,15 @@ process trim_col_fingerprints {
 	$dbin/filterTable.pl $cfp 1 $params.minTriples | gzip -c > cols_fp.raw.gz
 	"""
 }
+process PCA_col_fingerprints {
+	/* compute PCA on fingerprints of columns */
+	publishDir "$docket/analyses", mode: 'copy'
+	input: file cfp from colstrimfp
+	output: file 'cols_fp.pca.gz' into colsfppca
+	"""
+	$dbin/pca.py $cfp --L $L | gzip -c > cols_fp.pca.gz
+	"""
+}
 process center_col_fingerprints {
 	/* center col-wise fingerprints */
 	publishDir "$docket/fingerprints", mode: 'copy'
@@ -271,15 +281,6 @@ process serialize_cent_col_fingerprints {
 	$lphbin/serializeLPH.pl cols_fp $L 1 1 $cfp
 	"""
 }
-process PCA_col_fingerprints {
-	/* compute PCA on fingerprints of columns */
-	publishDir "$docket/analyses", mode: 'copy'
-	input: file cfp from colscentfp
-	output: file 'cols_fp.pca.gz' into colsfppca
-	"""
-	$dbin/pca.py $cfp --L $L | gzip -c > cols_fp.pca.gz
-	"""
-}
 process compare_col_fingerprints {
 	/* compare fingerprints of columns */
 	publishDir "$docket/comparisons", mode: 'copy'
@@ -294,7 +295,7 @@ process index_col_fingerprints {
 	/* index fingerprints of columns, using annoy */
 	errorStrategy 'ignore'
 	publishDir "$docket/fingerprints", mode: 'copy'
-	input: file cfp from colscentfp
+	input: file cfp from colstrimfp
 	output: file 'cols_fp.tree' into colsfpindex
 	output: file 'cols_fp.names' into colsfpnames
 	"""
@@ -316,9 +317,10 @@ process col_cluster_hier {
     /* Compute col-wise clustering */
     publishDir "$docket/analyses", mode: 'copy'
     input: file cpca from colsfppca
+    output: file 'cols_hier_linkage.txt.gz' into cols_hier_linkage
     output: file 'cols_hier_clusters.txt.gz' into cols_hier_clust
     """
-    $dbin/hierarchical_clustering.py --source $cpca | gzip -c > cols_hier_clusters.txt.gz
+    $dbin/hierarchical_clustering.py --source $cpca --linkage_out cols_hier_linkage.txt.gz | gzip -c > cols_hier_clusters.txt.gz
     """
 }
 process plot_PCA_col_fingerprints {
@@ -355,22 +357,22 @@ process compute_categorical_associations {
 
 /* ENRICHMENT ANALYSIS */
 
-process row_cluster_hier_v2 {
+process row_generate_cluster_membership {
     /* Compute row-wise clustering */
     publishDir "$docket/analyses", mode: 'copy'
 
     input:
     file rpca from rowsfppca
+    file rlink from rows_hier_linkage
 
     output:
-    file 'cluster_labels.txt.gz' into rows_hclust_labels
-    file 'cluster_members.json.gz' into rows_hclust_members
+    file 'row_cluster_members.json.gz' into rows_hclust_members
 
     """
-    $dbin/cluster_hier.py \
+    $dbin/generate_cluster_membership.py \
       --source $rpca \
-      --cl_labels_out cluster_labels.txt.gz \
-      --cl_members_out cluster_members.json.gz
+      --link_table_in $rlink \
+      --cl_members_out row_cluster_members.json.gz
     """
 }
 
@@ -408,5 +410,31 @@ process generate_enrichment_results {
     $dbin/compute_chi_squared.py \
       --counts_file $counts \
       --cluster_members $cl_members
+    """
+}
+
+process copy_code {
+    /* Copy code needed for visualizing results */
+    publishDir "$docket/visualizations/code", mode: 'copy'
+
+    output:
+    file '__init__.py'
+    file 'results.py'
+
+    """
+    cp '$baseDir/common/results.py' .
+    touch __init__.py
+    """
+}
+
+process copy_notebooks {
+    /* Copy Jupyter notebook for visualizing results */
+    publishDir "$docket/visualizations", mode: 'copy'
+
+    output:
+    file 'review-docket-study-results.ipynb'
+
+    """
+    cp '$baseDir/notebooks/review-docket-study-results.ipynb' .
     """
 }

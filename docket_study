@@ -215,9 +215,10 @@ process row_cluster_hier {
     /* Compute row-wise clustering */
     publishDir "$docket/analyses", mode: 'copy'
     input: file rpca from rowsfppca
+    output: file 'rows_hier_linkage.txt.gz' into rows_hier_linkage
     output: file 'rows_hier_clusters.txt.gz' into rows_hier_clust
     """
-    $dbin/hierarchical_clustering.py --source $rpca | gzip -c > rows_hier_clusters.txt.gz
+    $dbin/hierarchical_clustering.py --source $rpca --linkage_out rows_hier_linkage.txt.gz | gzip -c > rows_hier_clusters.txt.gz
     """
 }
 process plot_PCA_row_fingerprints {
@@ -316,9 +317,10 @@ process col_cluster_hier {
     /* Compute col-wise clustering */
     publishDir "$docket/analyses", mode: 'copy'
     input: file cpca from colsfppca
+    output: file 'cols_hier_linkage.txt.gz' into cols_hier_linkage
     output: file 'cols_hier_clusters.txt.gz' into cols_hier_clust
     """
-    $dbin/hierarchical_clustering.py --source $cpca | gzip -c > cols_hier_clusters.txt.gz
+    $dbin/hierarchical_clustering.py --source $cpca --linkage_out cols_hier_linkage.txt.gz | gzip -c > cols_hier_clusters.txt.gz
     """
 }
 process plot_PCA_col_fingerprints {
@@ -351,3 +353,88 @@ process compute_categorical_associations {
 }
 
 /* END SECTION: column analysis pipeline */
+
+
+/* ENRICHMENT ANALYSIS */
+
+process row_generate_cluster_membership {
+    /* Compute row-wise clustering */
+    publishDir "$docket/analyses", mode: 'copy'
+
+    input:
+    file rpca from rowsfppca
+    file rlink from rows_hier_linkage
+
+    output:
+    file 'row_cluster_members.json.gz' into rows_hclust_members
+
+    """
+    $dbin/generate_cluster_membership.py \
+      --source $rpca \
+      --link_table_in $rlink \
+      --cl_members_out row_cluster_members.json.gz
+    """
+}
+
+process pairwise_occurrence_counts {
+    /* Get occurrence counts for all attributes and parent/children trios for branch points in cluster hierarchy */
+    publishDir "$docket/analyses", mode: 'copy'
+
+    input:
+    file cdata from colsdata
+    file rhc_members from rows_hclust_members
+
+    output:
+    file 'pairwise_occurrence_counts.json.gz' into occur_counts
+
+    """
+    $dbin/pairwise_occurrence_counts.py \
+      --source $cdata \
+      --cluster_members $rhc_members \
+      --counts_out pairwise_occurrence_counts.json.gz
+    """
+}
+
+process generate_enrichment_results {
+    /* Calculate and write to output enrichment results */
+    publishDir "$docket/analyses/enrichment", mode: 'copy'
+
+    input:
+    file cl_members from rows_hclust_members
+    file counts from occur_counts
+
+    output:
+    file 'enrich_results_*.txt.gz' into enrichment_results
+
+    """
+    $dbin/compute_chi_squared.py \
+      --counts_file $counts \
+      --cluster_members $cl_members
+    """
+}
+
+process copy_code {
+    /* Copy code needed for visualizing results */
+    publishDir "$docket/visualizations/code", mode: 'copy'
+
+    output:
+    file '__init__.py'
+    file 'results.py'
+
+    """
+    cp '$baseDir/common/results.py' .
+    touch __init__.py
+    """
+}
+
+process copy_notebooks {
+    /* Copy Jupyter notebook for visualizing results */
+    publishDir "$docket/visualizations", mode: 'copy'
+
+    output:
+    file 'review-docket-study-results.ipynb'
+
+    """
+    cp '$baseDir/notebooks/review-docket-study-results.ipynb' .
+    """
+}
