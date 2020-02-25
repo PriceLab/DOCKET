@@ -1,0 +1,106 @@
+#!/bin/env perl
+$|=1;
+use strict;
+#use JSON;
+#my $lphbin = "/users/gglusman/proj/DOCKET/data-fingerprints";
+my $cutoff = 0.9;
+my(@files) = @ARGV;
+
+# Collect dockets to be compared
+my @dockets;
+foreach my $file (@files) {
+	if ($file =~ /^@/) {
+		open F, $file;
+		while (<F>) {
+			chomp;
+			my($d) = split /\t/;
+			if (looks_like_a_docket($d)) {
+				push @dockets, $d;
+			} else {
+				print "#doesn't look like a docket: $d\n";
+			}
+		}
+		close F;
+	} else {
+		if (looks_like_a_docket($file)) {
+			push @dockets, $file;
+		} else {
+			print "#doesn't look like a docket: $file\n";
+		}
+	}
+}
+die "Not enough dockets to compare\n" unless scalar @dockets>1;
+@dockets = sort @dockets;
+#print scalar @dockets, " dockets to compare\n";
+
+# Step 1: compare num_assoc output
+my(%n, %rho, %pval);
+foreach my $i (0..$#dockets) {
+	next unless -e "$dockets[$i]/comparisons/num_assoc.gz";
+	open RES, "gunzip -c $dockets[$i]/comparisons/num_assoc.gz |";
+	while (<RES>) {
+		next if /^#/;
+		chomp;
+		my($q, $t, $n, $rho, $p) = split /\t/;
+		next if $q eq 'variableA';
+		($q, $t) = sort ($q, $t);
+		my $id = join("\t", $q, $t);
+		push @{$n{$id}}, $n;
+		push @{$rho{$id}}, $rho;
+		push @{$pval{$id}}, $p;
+	}
+	close RES;
+}
+
+
+foreach my $id (keys %n) {
+	next unless scalar @{$rho{$id}}>10;
+	my($ravg, $rstd) = avgstd($rho{$id});
+	my($pavg, $pstd) = avgstd($pval{$id});
+	print join("\t", $n{$id}[0], $n{$id}[-1], $ravg, $rstd, $pavg, $pstd, $id), "\n";
+}
+
+
+
+
+
+
+
+
+#########################
+sub read_json {
+	my($file) = @_;
+	my $json;
+	open J, "gunzip -c $file |";
+	while (<J>) {
+		chomp;
+		$json .= $_;
+	}
+	close J;
+	return decode_json($json);
+}
+
+
+sub looks_like_a_docket {
+	my($dir) = @_;
+	
+	return 1 if
+		-d $dir && 
+		-d "$dir/analyses" && 
+		-d "$dir/fingerprints" && 
+		-d "$dir/comparisons" && 
+		-d "$dir/visualizations";
+}
+
+sub avgstd {
+	my($values) = @_;
+	my($sum, $devsqsum);
+
+	my $n = scalar @$values;
+	return unless $n>1;
+	foreach (@$values) { $sum += $_ }
+	my $avg = $sum / $n;
+	foreach (@$values) { $devsqsum += ($_-$avg)**2 }
+	my $std = sqrt($devsqsum/($n-1));
+	return $avg, $std;
+}
