@@ -16,6 +16,7 @@ my $data = decode_json($json);
 my($ch, $types) = compute_content_histogram($data);
 foreach (keys %$ch) {
 	$types->{$_}{'values'} = scalar keys %{$ch->{$_}};
+	#rescale($ch->{$_});
 }
 
 open TYPES, ">$types_outfile";
@@ -25,6 +26,16 @@ close TYPES;
 open HIST, ">$hist_outfile";
 print HIST to_json($ch, {pretty=>1});
 close HIST;
+
+sub rescale {
+	my($what) = @_;
+	
+	my $total;
+	$total += $what->{$_} foreach keys %$what;
+	return unless $total;
+	$what->{$_} /= $total foreach keys %$what;
+}
+
 
 
 sub compute_content_histogram {

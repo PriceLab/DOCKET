@@ -2,8 +2,9 @@
 $|=1;
 use strict;
 use JSON;
+use Scalar::Util qw(looks_like_number);
 my $lphbin = "/users/gglusman/proj/DOCKET/data-fingerprints";
-my $cutoff = 0.9;
+my $cutoff = 0.8;
 my(@files) = @ARGV;
 
 # Collect dockets to be matched
@@ -54,7 +55,7 @@ foreach my $i (0..$#dockets-1) {
 	}
 }
 
-# Step 2: trim candidate matches by computing Jaccards
+# Step 2: trim candidate matches by computing Jaccards (categorical) or two-sample Kolmogorov-Smirnov tests (numerical)
 foreach my $i (0..$#dockets-1) {
 	next unless defined $cand[$i];
 	my $datai = read_json("$dockets[$i]/data/cols_hist.json.gz");
@@ -64,33 +65,137 @@ foreach my $i (0..$#dockets-1) {
 		print $dockets[$i], "\n";
 		print $dockets[$j], "\n";
 		print "Columns matching: ", scalar @{$cand[$i][$j]}, "\n";
-		#print join("\t", map {"$_->[0]:$_->[1]"} @{$cand[$i][$j]}), "\n";
+		my %stat;
+		my %type;
 		foreach my $match (@{$cand[$i][$j]}) {
-			next if $match->[0] eq $match->[1];
+			#next if $match->[0] eq $match->[1];
 			my $di = $datai->{$match->[0]};
 			die "nothing in $match->[0]\n" unless keys %$di;
 			my $dj = $dataj->{$match->[1]};
 			die "nothing in $match->[1]\n" unless keys %$dj;
-			my %union = %$di;
-			my %intersection;
-			while (my($key) = each %$di) {
-				$intersection{$key}++ if defined $dj->{$key};
+			my $typei = datatype($di);
+			my $typej = datatype($dj);
+			my $pair = join("\t", $match->[0], $match->[1]);
+			if ($typei eq $typej) {
+				if ($typei eq 'num') {
+					$type{$pair} = 'num';
+					$stat{$pair} = 1-KS2s($di, $dj);
+				} elsif ($typei eq 'str') {
+					$type{$pair} = 'str';
+					$stat{$pair} = weighted_jaccard($di, $dj);
+				} else {
+					$type{$pair} = 'mixed';
+					$stat{$pair} = 0;
+					#print "both mixed: $match->[0] $match->[1]\n";
+				}
+			} else {
+				$type{$pair} = '$typei$typej';
+				$stat{$pair} = 0;
+				#print "different types: $typei $typej\n";
 			}
-			while (my($key) = each %$dj) {
-				$union{$key}++;
-			}
-			my $int_size = scalar keys %intersection;
-			my $union_size = scalar keys %union;
-			my $jaccard = $int_size / $union_size;
-			my $int_of_i = $int_size / scalar keys %$di;
-			my $int_of_j = $int_size / scalar keys %$dj;
-			
-			next unless $jaccard>0.1 || $int_of_i>0.1 || $int_of_j>0.1;
-			print join("\t", $match->[0], $match->[1], $jaccard, $int_of_i, $int_of_j), "\n";
+			#next unless $jaccard>0.1 || $int_of_i>0.1 || $int_of_j>0.1;
+			#print join("\t", $match->[0], $match->[1], $jaccard, $int_of_i, $int_of_j), "\n";
 		}
+		my @used;
+		foreach my $pair (sort {$stat{$b}<=>$stat{$a}} keys %stat) {
+			my($m0, $m1) = split /\t/, $pair;
+			next if $used[0]{$m0} || $used[1]{$m1};
+			print join("\t", $stat{$pair}, $type{$pair}, $pair), "\n";# unless $m0 eq $m1;
+			$used[0]{$m0}++;
+			$used[1]{$m1}++;
+		}
+		
 		print "\n";
 	}
 	
+}
+
+sub datatype {
+	my($what) = @_;
+	my($num, $str);
+	while (my($key) = each %$what) {
+		next unless $key;
+		next if $key eq 'NA';
+		if (looks_like_number($key)) {
+			$num++;
+		} else {
+			$str++;
+		}
+	}
+	return 'num' unless $str;
+	return 'str' unless $num;
+	return 'mixed';
+}
+
+
+sub KS2s { #two-sample Kolmogorov-Smirnov test
+	my($di, $dj) = @_;
+	
+	my(%cumul, $ti, $tj, $ci, $cj, $max, $d);
+	foreach my $key (sort {$a<=>$b} keys %$di) {
+		$ti += $di->{$key};
+		$cumul{$key}[0] = $ti;
+	}
+	foreach my $key (sort {$a<=>$b} keys %$dj) {
+		$tj += $dj->{$key};
+		$cumul{$key}[1] = $tj;
+	}
+	$ci = $cj = $max = 0;
+	foreach my $key (sort {$a<=>$b} keys %cumul) {
+		$ci = ($cumul{$key}[0]/$ti) || $ci;
+		$cj = ($cumul{$key}[1]/$tj) || $cj;
+		$d = abs($ci-$cj);
+		$max = $d if $d>$max;
+	}
+	return $max;
+}
+
+
+sub weighted_jaccard {
+	my($di, $dj) = @_;
+	
+	my %union = %$di;
+	my %intersection = %$di;
+	while (my($key, $value) = each %$di) {
+		my $jvalue = $dj->{$key};
+		if (defined $jvalue) {
+			if ($jvalue > $intersection{$key}) {
+				$union{$key} = $jvalue;
+			} else {
+				$intersection{$key} = $jvalue;
+			}
+		} else {
+			delete $intersection{$key};
+		}
+	}
+	while (my($key, $value) = each %$dj) {
+		$union{$key} = $value unless defined $intersection{$key};
+	}
+	
+	my $int_size = 0;
+	$int_size += $_ foreach values %intersection;
+	my $union_size = 0;
+	$union_size += $_ foreach values %union;
+	return $int_size / $union_size;
+}
+
+
+sub jaccard {
+	my($di, $dj) = @_;
+	
+	my %union = %$di;
+	my %intersection;
+	while (my($key) = each %$di) {
+		$intersection{$key}++ if defined $dj->{$key};
+	}
+	while (my($key) = each %$dj) {
+		$union{$key}++;
+	}
+	my $int_size = scalar keys %intersection;
+	my $union_size = scalar keys %union;
+	return $int_size / $union_size;
+	#my $int_of_i = $int_size / scalar keys %$di;
+	#my $int_of_j = $int_size / scalar keys %$dj;
 }
 
 
@@ -121,6 +226,11 @@ sub read_json {
 sub looks_like_a_docket {
 	my($dir) = @_;
 	
-	return 1 if -d $dir && -d "$dir/analyses" && -d "$dir/fingerprints" && -d "$dir/comparisons" && -d "$dir/visualizations";
+	return 1 if
+		-d $dir && 
+		-d "$dir/analyses" && 
+		-d "$dir/fingerprints" && 
+		-d "$dir/comparisons" && 
+		-d "$dir/visualizations";
 }
 
