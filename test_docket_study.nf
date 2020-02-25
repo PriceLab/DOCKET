@@ -413,28 +413,16 @@ process generate_enrichment_results {
     """
 }
 
-process copy_code {
-    /* Copy code needed for visualizing results */
-    publishDir "$docket/visualizations/code", mode: 'copy'
-
-    output:
-    file '__init__.py'
-    file 'results.py'
-
-    """
-    cp '$baseDir/common/results.py' .
-    touch __init__.py
-    """
-}
-
 process copy_notebooks {
     /* Copy Jupyter notebook for visualizing results */
     publishDir "$docket/visualizations", mode: 'copy'
 
     output:
+    file 'results.py'
     file 'review-docket-study-results.ipynb'
 
     """
+    cp '$baseDir/common/results.py' .
     cp '$baseDir/notebooks/review-docket-study-results.ipynb' .
     """
 }
