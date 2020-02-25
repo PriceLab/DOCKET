@@ -11,7 +11,7 @@
 
 import os
 import common.file_io as io
-import common.transform as transform
+import common.preprocess as preprocess
 import common.utilities as utilities
 from datafingerprint import DataFingerprint
 
@@ -96,7 +96,7 @@ class DocketMaker:
             return
 
         data = self.file_data[label]
-        self.file_data[label] = transform.pad_tabular_data(data, pad_size, pad_value)
+        self.file_data[label] = preprocess.pad_tabular_data(data, pad_size, pad_value)
 
 
 # -------------------------------------------------------------------------
