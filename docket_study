@@ -151,6 +151,15 @@ process trim_row_fingerprints {
 	$dbin/filterTable.pl $rfp 1 $params.minTriples | gzip -c > rows_fp.raw.gz
 	"""
 }
+process PCA_row_fingerprints {
+	/* compute PCA on fingerprints of rows */
+	publishDir "$docket/analyses", mode: 'copy'
+	input: file rfp from rowstrimfp
+	output: file 'rows_fp.pca.gz' into rowsfppca
+	"""
+	$dbin/pca.py $rfp --L $L | gzip -c > rows_fp.pca.gz
+	"""
+}
 process center_row_fingerprints {
 	/* center row-wise fingerprints */
 	publishDir "$docket/fingerprints", mode: 'copy'
@@ -170,15 +179,6 @@ process serialize_cent_row_fingerprints {
 	$lphbin/serializeLPH.pl rows_fp $L 1 0 $rfp
 	"""
 }
-process PCA_row_fingerprints {
-	/* compute PCA on fingerprints of rows */
-	publishDir "$docket/analyses", mode: 'copy'
-	input: file rfp from rowscentfp
-	output: file 'rows_fp.pca.gz' into rowsfppca
-	"""
-	$dbin/pca.py $rfp --L $L | gzip -c > rows_fp.pca.gz
-	"""
-}
 process compare_row_fingerprints {
 	/* compare fingerprints of rows */
 	publishDir "$docket/comparisons", mode: 'copy'
@@ -193,7 +193,7 @@ process index_row_fingerprints {
 	/* index fingerprints of rows, using annoy */
 	errorStrategy 'ignore'
 	publishDir "$docket/fingerprints", mode: 'copy'
-	input: file rfp from rowscentfp
+	input: file rfp from rowstrimfp
 	output: file 'rows_fp.tree' into rowsfpindex
 	output: file 'rows_fp.names' into rowsfpnames
 	"""
@@ -252,6 +252,15 @@ process trim_col_fingerprints {
 	$dbin/filterTable.pl $cfp 1 $params.minTriples | gzip -c > cols_fp.raw.gz
 	"""
 }
+process PCA_col_fingerprints {
+	/* compute PCA on fingerprints of columns */
+	publishDir "$docket/analyses", mode: 'copy'
+	input: file cfp from colstrimfp
+	output: file 'cols_fp.pca.gz' into colsfppca
+	"""
+	$dbin/pca.py $cfp --L $L | gzip -c > cols_fp.pca.gz
+	"""
+}
 process center_col_fingerprints {
 	/* center col-wise fingerprints */
 	publishDir "$docket/fingerprints", mode: 'copy'
@@ -271,15 +280,6 @@ process serialize_cent_col_fingerprints {
 	$lphbin/serializeLPH.pl cols_fp $L 1 1 $cfp
 	"""
 }
-process PCA_col_fingerprints {
-	/* compute PCA on fingerprints of columns */
-	publishDir "$docket/analyses", mode: 'copy'
-	input: file cfp from colscentfp
-	output: file 'cols_fp.pca.gz' into colsfppca
-	"""
-	$dbin/pca.py $cfp --L $L | gzip -c > cols_fp.pca.gz
-	"""
-}
 process compare_col_fingerprints {
 	/* compare fingerprints of columns */
 	publishDir "$docket/comparisons", mode: 'copy'
@@ -294,7 +294,7 @@ process index_col_fingerprints {
 	/* index fingerprints of columns, using annoy */
 	errorStrategy 'ignore'
 	publishDir "$docket/fingerprints", mode: 'copy'
-	input: file cfp from colscentfp
+	input: file cfp from colstrimfp
 	output: file 'cols_fp.tree' into colsfpindex
 	output: file 'cols_fp.names' into colsfpnames
 	"""
