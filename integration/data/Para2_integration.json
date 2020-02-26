@@ -1,0 +1,5 @@
+{
+"Genelist": ["PIK3CA","TP53","KRAS","EGFR"],
+"Druglist":[], 
+"Output": "../Output/LUAD_GDSC_mut_drug_pair.csv"
+}
