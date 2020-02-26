@@ -1,4 +1,4 @@
-#!/usr/bin/env nextflow
+#!/bin/env nextflow
 dbin = "$baseDir/scripts"
 lphbin = "$baseDir/data-fingerprints"
 
