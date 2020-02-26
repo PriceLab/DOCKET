@@ -56,59 +56,74 @@ foreach my $i (0..$#dockets-1) {
 }
 
 # Step 2: trim candidate matches by computing Jaccards (categorical) or two-sample Kolmogorov-Smirnov tests (numerical)
+
+my @comp;
 foreach my $i (0..$#dockets-1) {
 	next unless defined $cand[$i];
 	my $datai = read_json("$dockets[$i]/data/cols_hist.json.gz");
 	foreach my $j ($i+1..$#dockets) {
 		next unless defined $cand[$i][$j];
 		my $dataj = read_json("$dockets[$j]/data/cols_hist.json.gz");
-		print $dockets[$i], "\n";
-		print $dockets[$j], "\n";
-		print "Columns matching: ", scalar @{$cand[$i][$j]}, "\n";
-		my %stat;
-		my %type;
+		#print $dockets[$i], "\n";
+		#print $dockets[$j], "\n";
+		#print "Columns matching: ", scalar @{$cand[$i][$j]}, "\n";
+		my(%stat, %type, %method);
+		my %comp = ('query' => $dockets[$i], 'target' => $dockets[$j]);
 		foreach my $match (@{$cand[$i][$j]}) {
-			#next if $match->[0] eq $match->[1];
 			my $di = $datai->{$match->[0]};
-			die "nothing in $match->[0]\n" unless keys %$di;
+			delete $di->{'NA'};
+			delete $di->{''};
+			next unless keys %$di;
 			my $dj = $dataj->{$match->[1]};
-			die "nothing in $match->[1]\n" unless keys %$dj;
+			delete $dj->{'NA'};
+			delete $dj->{''};
+			next unless keys %$dj;
 			my $typei = datatype($di);
 			my $typej = datatype($dj);
 			my $pair = join("\t", $match->[0], $match->[1]);
 			if ($typei eq $typej) {
 				if ($typei eq 'num') {
 					$type{$pair} = 'num';
-					$stat{$pair} = 1-KS2s($di, $dj);
+					$stat{$pair} = 1-KS2s($di, $dj, $pair);
+					$method{$pair} = 'two-sample Kolmogorov-Smirnov';
 				} elsif ($typei eq 'str') {
 					$type{$pair} = 'str';
 					$stat{$pair} = weighted_jaccard($di, $dj);
+					$method{$pair} = 'weighted Jaccard'
 				} else {
 					$type{$pair} = 'mixed';
 					$stat{$pair} = 0;
-					#print "both mixed: $match->[0] $match->[1]\n";
 				}
 			} else {
-				$type{$pair} = '$typei$typej';
+				$type{$pair} = '${typei}_$typej';
 				$stat{$pair} = 0;
-				#print "different types: $typei $typej\n";
 			}
 			#next unless $jaccard>0.1 || $int_of_i>0.1 || $int_of_j>0.1;
 			#print join("\t", $match->[0], $match->[1], $jaccard, $int_of_i, $int_of_j), "\n";
 		}
 		my @used;
 		foreach my $pair (sort {$stat{$b}<=>$stat{$a}} keys %stat) {
+			last if $stat{$pair}<0.75;
 			my($m0, $m1) = split /\t/, $pair;
 			next if $used[0]{$m0} || $used[1]{$m1};
-			print join("\t", $stat{$pair}, $type{$pair}, $pair), "\n";# unless $m0 eq $m1;
-			$used[0]{$m0}++;
-			$used[1]{$m1}++;
+			$used[0]{$m0} = $used[1]{$m1} = 1;
+			#next if $m0 eq $m1;
+			#print join("\t", $stat{$pair}, $type{$pair}, $pair), "\n";
+			push @{$comp{'column_matches'}}, {
+				'query' => $m0,
+				'target' => $m1,
+				'stat' => $method{$pair},
+				'value' => sprintf("%.2f", $stat{$pair}),
+				'type' => $type{$pair},
+			};
 		}
-		
-		print "\n";
+		#print "\n";
+		$comp{'matching_columns'} = scalar @{$comp{'column_matches'}};
+		push @comp, \%comp;
 	}
-	
 }
+
+print to_json(\@comp, {pretty=>1}), "\n";
 
 sub datatype {
 	my($what) = @_;
@@ -128,10 +143,12 @@ sub datatype {
 }
 
 
-sub KS2s { #two-sample Kolmogorov-Smirnov test
+sub KS2s { #two-sample Kolmogorov-Smirnov test, approximate
+	#expects input in form of two references to hashes representing histograms to be compared
+	### could be made more precise by interpolating missing values
 	my($di, $dj) = @_;
 	
-	my(%cumul, $ti, $tj, $ci, $cj, $max, $d);
+	my(%cumul, $ti, $tj);
 	foreach my $key (sort {$a<=>$b} keys %$di) {
 		$ti += $di->{$key};
 		$cumul{$key}[0] = $ti;
@@ -140,7 +157,7 @@ sub KS2s { #two-sample Kolmogorov-Smirnov test
 		$tj += $dj->{$key};
 		$cumul{$key}[1] = $tj;
 	}
-	$ci = $cj = $max = 0;
+	my($ci, $cj, $max, $d);
 	foreach my $key (sort {$a<=>$b} keys %cumul) {
 		$ci = ($cumul{$key}[0]/$ti) || $ci;
 		$cj = ($cumul{$key}[1]/$tj) || $cj;
@@ -150,8 +167,41 @@ sub KS2s { #two-sample Kolmogorov-Smirnov test
 	return $max;
 }
 
+sub KS2sMod { #modified two-sample Kolmogorov-Smirnov test, approximate
+	#expects input in form of two references to hashes representing histograms to be compared
+	### could be made more precise by interpolating missing values
+	my($di, $dj, $pair) = @_;
+	
+	my @sorti = sort {$a<=>$b} keys %$di;
+	my @sortj = sort {$a<=>$b} keys %$dj;
+	return 1 if $sorti[0]>$sortj[-1] || $sortj[0]>$sorti[-1];
+	my(%cumul, $ti, $tj);
+	foreach my $key (@sorti) {
+		$ti += $di->{$key};
+		$cumul{$key}[0] = $ti;
+	}
+	foreach my $key (sort {$a<=>$b} keys %$dj) {
+		$tj += $dj->{$key};
+		$cumul{$key}[1] = $tj;
+	}
+	my($ci, $cj, $max, $d);
+	my($sum, $n, $prev);
+	foreach my $key (sort {$a<=>$b} keys %cumul) {
+		$ci = ($cumul{$key}[0]/$ti) || $ci;
+		$cj = ($cumul{$key}[1]/$tj) || $cj;
+		$d = abs($ci-$cj);
+		$sum += $d*($key-$prev);
+		$n += ($key-$prev);
+	#	print join("\t", $key, $ci, $cj, $d, $sum, $pair), "\n";
+		$prev = $key;
+	}
+	#print "##final: ", $sum/$n, "\n";
+	return $sum/$n;
+}
 
-sub weighted_jaccard {
+
+sub weighted_jaccard { #Jaccard comparison for categorical data
+	#expects input in form of two references to hashes representing histograms to be compared
 	my($di, $dj) = @_;
 	
 	my %union = %$di;
@@ -189,7 +239,7 @@ sub jaccard {
 		$intersection{$key}++ if defined $dj->{$key};
 	}
 	while (my($key) = each %$dj) {
-		$union{$key}++;
+		$union{$key}++ unless defined $union{$key};
 	}
 	my $int_size = scalar keys %intersection;
 	my $union_size = scalar keys %union;
