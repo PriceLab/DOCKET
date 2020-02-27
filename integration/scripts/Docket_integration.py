@@ -397,3 +397,71 @@ def generate_mutation_matrix(TCGA_mut_selected, sample_column, gene_column, labe
             new_col.append(str(i)+'_'+label_forTable)
         Gene_mut_matrix.columns = new_col
     return(Gene_mut_matrix)
+
+
+
+def cytoscape_plot(x, F1, F2,Edge, types):
+    from cyjupyter import Cytoscape
+    import json
+
+    nodes_list = []
+    edges_list = []
+
+    if types == 'category':
+        ID1_list = []
+        ID2_list = []
+        for i in range(0, x.shape[0]):
+            ID1_list.append( str(x[F1].values[i]) )
+            ID2_list.append( str(x[F2].values[i]) )
+            
+        x['ID1'] = ID1_list
+        x['ID2'] = ID2_list
+
+        for i in range(0, x.shape[0]):
+            nodes_list.append({'data':{'id':x['ID1'].values[i], 
+                                       'color':'yellow', 
+                                       'shape':'ellipse'}} )
+            
+            nodes_list.append({'data':{'id':x['ID2'].values[i], 
+                                       'color':'grey', 
+                                       'shape':'rectangle'}} )
+            
+            if x[Edge].values[i] > 0 :
+                edges_list.append({'data':{'id': 'edge'+str(i),
+                                           'source': x['ID1'].values[i],
+                                           'target': x['ID2'].values[i], 
+                                           'type': 'red'}})
+                
+            elif x[Edge].values[i]  < 0:
+                edges_list.append({'data':{'id': 'edge'+str(i),
+                                           'source': x['ID1'].values[i],
+                                           'target': x['ID2'].values[i], 
+                                           'type': 'black'}})
+
+    my_cy = {'elements':{'nodes':nodes_list,'edges':edges_list}}
+
+    mystyle = [{
+            'selector': 'node',
+            'style': {
+                'background-color': 'data(color)',
+                'label': 'data(id)',
+                'width': 12,
+                'height': 12,
+                'shape':'data(shape)',
+                'color': 'grey',
+                'font-weight': 400,
+                'text-halign': 'middle',
+                'text-valign': 'bottom',
+                'font-size': 6,
+                'size':3
+            }},
+            {
+            'selector': 'edge',
+            'style': {
+                'width': 1,
+                'line-color': 'data(type)',
+                'target-arrow-color': '#37474F',
+                'target-arrow-shape': 'triangle'}
+            }]
+    cy = Cytoscape(data = my_cy, visual_style = mystyle,  background =('#FFFFFF'))
+    return(cy)
