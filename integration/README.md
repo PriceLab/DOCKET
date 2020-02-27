@@ -30,3 +30,13 @@ Output/ : the output directory
 annotation: Label for which process will the integration process do
 data/Para1_annotation.json: Parameter file 
 data/Para2_annotation.json: Parameter file
+
+
+## An example of visulize the knoledge graph##
+python docket_integration_interface.py Output/  visualization data/Para_visulization.json
+
+Parameters description:
+Output/ : the output directory
+visualization: Label for which process will the integration process do
+data/Para_visulization.json: Parameter file
+
