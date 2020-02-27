@@ -1,0 +1,136 @@
+#!/bin/env perl
+$|=1;
+use strict;
+use JSON;
+
+my($docket) = @ARGV;
+unless ($docket) {
+	print "Usage: docket_overview <path to docket>\n";
+	exit;
+}
+
+die "$docket doesn't look like a docket\n" unless looks_like_a_docket($docket);
+my $data_dir = "$docket/data";
+my $an_dir = "$docket/analyses";
+my $fp_dir = "$docket/fingerprints";
+my $cmp_dir = "$docket/comparisons";
+my $viz_dir = "$docket/visualizations";
+
+my $rows_hist = read_json("$data_dir/rows_hist.json.gz");
+my $cols_hist = read_json("$data_dir/cols_hist.json.gz");
+
+
+
+
+
+print_header("docket overview");
+print_section("Overview", [
+	"Docket path: $docket",
+	join(" ", "Table size:", scalar keys %$rows_hist, "rows", "x", scalar keys %$cols_hist, "columns"),
+	]);
+
+my $col_info = read_json("$data_dir/cols_types.json.gz");
+print_section("Columns", [
+	[$col_info, 'table'],
+	]);
+
+print_footer();
+
+
+
+
+
+#########################
+sub print_header {
+	my($title) = @_;
+	
+	print "<!doctype html public \"-//w3c//dtd html 4.0 transitional//en\">\n";
+	print "<html>\n<head>\n";
+	print "  <title>$title</title>\n" if $title;
+	print "</head>\n<body>\n";
+}
+
+sub print_footer {
+	#my() = @_;
+	
+	print "</body>\n</html>\n";
+}
+
+sub print_section {
+	my($heading, $content) = @_;
+	
+	print "  <h2>$heading</h2>\n";
+	if (ref($content) eq 'ARRAY') {
+		print_block($_) foreach @$content;
+	} elsif (ref($content) eq 'HASH') {
+		foreach my $blockname (sort keys %$content) {
+			print "    <h3>$blockname</h3>\n";
+			print_block($content->{$blockname});
+		}
+	}
+}
+
+sub print_block {
+	my($bl) = @_;
+	
+	if (ref($bl) eq 'ARRAY') {
+		my($what, $format) = @$bl;
+		if ($format eq 'table') {
+			print_table($what);
+		}
+	} elsif (ref($bl) eq 'HASH') {
+		
+	} else {
+		print "$bl<br>\n";
+	}
+}
+
+sub print_table {
+	my($what) = @_;
+	
+	if (ref($what) eq 'HASH') {
+		my @keys = sort keys %$what;
+		my %cols;
+		while (my($key, $v) = each %$what) {
+			$cols{$_}++ foreach keys %$v;
+		}
+		my @cols = sort keys %cols;
+		print "<table border>\n";
+		print "<tr><th>", join("</th><th>", 'Column name', @cols), "</th></tr>\n";
+		foreach my $key (@keys) {
+			print "<tr><td><b>$key</b></td><td>";
+			print join("</td><td>", map {$what->{$key}{$_} || " "} @cols);
+		}
+		print "</td></tr>\n";
+		print "</table>\n";
+	}
+	
+}
+
+
+
+
+sub read_json {
+	my($file) = @_;
+	my $json;
+	open J, "gunzip -c $file |";
+	while (<J>) {
+		chomp;
+		$json .= $_;
+	}
+	close J;
+	return decode_json($json);
+}
+
+
+sub looks_like_a_docket {
+	my($dir) = @_;
+	
+	return 1 if
+		-d $dir && 
+		-d "$dir/analyses" && 
+		-d "$dir/fingerprints" && 
+		-d "$dir/comparisons" && 
+		-d "$dir/visualizations";
+}
+
