@@ -1,8 +1,0 @@
-{
-"input_file":"../Output/LUAD_GDSC_mut_drug_pair_annotated.csv",
-"columns_forFilter":"p",
-"threshold":"0.05",
-"F1":["F1"],
-"F2":["Drug_Name","Drug_Putative_Target","Drug_Targeted_process_or_pathway"],
-"Label_for_edge":"SE"
-}
