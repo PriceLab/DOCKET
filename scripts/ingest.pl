@@ -89,7 +89,7 @@ sub read_tabular {
 		
 		$colHist[scalar @v]++;
 		$rows++;
-		foreach my $col ($skipcols..$#v) {
+		foreach my $col ($skipcols..$#names) {
 			my $v = $v[$col];
 			$colwise{$names[$col]}{$id} = $rowwise{$id}{$names[$col]} = $v;
 		}

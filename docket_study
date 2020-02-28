@@ -12,6 +12,7 @@ params.minTriples = 1
 params.skipDuplicates = 1
 params.rowclusters = 3
 params.colclusters = 3
+params.comment = '#'
 
 /* interpret parameters */
 infile = file(params.infile)
@@ -339,7 +340,7 @@ process compute_numeric_associations {
 	input: file ctypes from colstypes
 	output: file 'num_assoc.gz'
 	"""
-	$dbin/numerical_associations.py --infile $params.infile --types_file $ctypes --header_row 0 --index_col 0 | gzip -c > num_assoc.gz
+	$dbin/numerical_associations.py --infile $params.infile --types_file $ctypes --header_row 0 --index_col 0 --comment '$params.comment' | gzip -c > num_assoc.gz
 	"""
 }
 process compute_categorical_associations {
