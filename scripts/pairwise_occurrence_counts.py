@@ -10,7 +10,8 @@ def main(source_file, cl_members_file, counts_out_file):
     assert isinstance(source_file, str)
 
     # Load original data in json format
-    data = pd.read_json(source_file)
+    data = io.load_json(source_file)
+    data = pd.DataFrame(data)
 
     # Load cluster members and labels data
     cl_members_data = io.load_json(cl_members_file)
