@@ -49,7 +49,7 @@ data/Para2_annotation.json: Parameter file
 ```bash
 $ python docket_integration_interface.py \
     Output/  visualization \
-    data/Para_visulization.json
+    data/Para_visualization.json
 ```
 
 Parameters description:
