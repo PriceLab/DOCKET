@@ -18,8 +18,8 @@ skip = int(args.skip)
 
 # read fingerprints
 #X = np.loadtxt(fname = file, usecols = range(skip, L+skip))
-names = np.genfromtxt(fname = file, dtype='str', usecols = range(0, 1))
-X = np.genfromtxt(fname = file, dtype='float', usecols = range(skip, L+skip))
+names = np.genfromtxt(fname = file, delimiter='\t', dtype='str', usecols = range(0, 1))
+X = np.genfromtxt(fname = file, delimiter='\t', dtype='float', usecols = range(skip, L+skip), comments=None)
 
 # normalize raw fingerprints
 for i in range(0, len(X)):

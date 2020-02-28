@@ -24,6 +24,7 @@ parser.add_argument('--sep', help='Delimiter to use', default='\t')
 parser.add_argument('--types_file', help='File with type counts')
 parser.add_argument('--index_col', help='Index of column to use as row labels', default=None)
 parser.add_argument('--header_row', help='Index of row to use as column labels', default=None)
+parser.add_argument('--comment', help='Character to treat as comment signal', default='#')
 args=parser.parse_args()
 
 types = load_json(args.types_file)
@@ -34,8 +35,10 @@ for i in types:
     if 'NUM' in types[i] and not 'STR' in types[i] and types[i]['values']>=10:
         cols.append(i)
 
-#data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row))
-data = pd.read_csv(args.infile, sep=args.sep, index_col=int(args.index_col), header=int(args.header_row), comment='#',low_memory=False)
+if args.comment == '0':
+    data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row), low_memory=False)
+else:
+    data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row), comment=args.comment, low_memory=False)
 
 print("#numerical", len(cols), sep="\t")
 print('variableA', 'variableB', 'N', 'rho', 'pval', sep="\t")

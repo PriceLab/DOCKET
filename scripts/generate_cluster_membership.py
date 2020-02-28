@@ -15,11 +15,8 @@ def main(file,
 
     assert isinstance(file, str)
 
-    # Load original data
-    data = pd.read_table(file, index_col=0, header=None)
-
-    # Use data index as labels
-    labels = np.array(data.index)
+    # Load the labels from the PCA output file - as strings
+    labels = np.genfromtxt(fname = file, delimiter='\t', dtype='str', usecols = range(0, 1))
 
     # Load hierarchical clustering linkage table
     linkage_table = pd.read_table(link_table_in, index_col=False, header=None)
