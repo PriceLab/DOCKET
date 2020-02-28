@@ -93,13 +93,13 @@ def collapse_unique(key, value, based_on=None, lower=False, replace_ws=None, col
         val_counts = {s: val_counts[i] for i, s in enumerate(candidate_values) if val_counts[i] > 1}
         len_diff = len(candidate_values) - len(val_counts)
         if len_diff > 0:
-            key_other = key.lower() if lower else key
+            key_other = string_preprocess(key, lower, replace_ws)
             val_counts[f'{key_other}.other'] = len_diff
     else:
         other_count = 0 if based_on is None else int(len(val_list) - np.array(val_counts).sum())
         val_counts = {s: val_counts[i] for i, s in enumerate(candidate_values)}
         if other_count > 0:
-            key_other = key.lower() if lower else key
+            key_other = string_preprocess(key, lower, replace_ws)
             val_counts[f'{key_other}.other'] = other_count
 
     return val_counts
