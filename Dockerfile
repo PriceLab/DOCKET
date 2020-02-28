@@ -22,8 +22,8 @@ RUN wget -qO- https://get.nextflow.io | bash \
 && pip install -r /install/requirements.txt
 
 # set perl environment variables
-ENV PERL_PATH=/home/jovyan/data-fingerprints
-ENV PERL5LIB=/app/data-fingerprints:$PERL_PATH:$PERL_PATH/lib/perl5:$PERL_PATH:$PERL5LIB
+ENV PERL_PATH=/app/data-fingerprints
+ENV PERL5LIB=$PERL_PATH:$PERL_PATH/lib/perl5:$PERL5LIB
 ENV PATH="$PERL_PATH:$PATH"
 
 # Commented out because the directory has been committed as data-fingeprints
