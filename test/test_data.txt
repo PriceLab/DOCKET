@@ -1,6 +1,53 @@
-id	A	B	C	D	E
-id1	1	foo	3	4	5
-id2	2	4	6	8	10
-id3	3	6	9	12	15
-id4	4	8	12	16	20
-id5	5	10	15	20	25
+id	A	B	C	D	E	A1	B1	C1	W	X	Y	Z
+id1	1	hello		5.1	3.5	1.4	0.2	DOCKET	5	0	0	0.568978054
+id2	4	world		4.9	3	1.4	0.2	will	4	NA	1	0.79789715
+id3	2			4.7	3.2	1.3	0.2		3	NA	1	0.944417833
+id4		how		4.6	3.1	1.5		accelerate	2	0	1	0.067298646
+id5	6	are		5		1.4		the	1	1	0	0.534851469
+id6		you		5.4	3.9	1.7	0.4	work		NA	1	0.084542732
+id7		today?		4.6	3.4		0.3		10	NA	0	0.840754544
+id8	7			6.8	2.8	4.8	1.4	of	20	1	NA	0.83497852
+id9	7				3	5	1.7	researchers	30	2	NA	0.369722999
+label1	4	you		6	2.9	4.5	1.5	DOCKET	40	1		0.276566895
+label2		are		5.7		3.5	1	Overview		2		0.102021839
+label3		well?		5.5	2.4	3.8		will	2		1	0.502407384
+label4	6			5.5	2.4	3.7	1	embody	4	0	0	0.485649725
+label5	5	good		5.8	2.7	3.9	1.2	an	6	0	0	0.932249632
+id1	3	to		6	2.7	5.1	1.6	automated	8	1	1	0.749658846
+id8	2	hear		5.4	3	4.5	1.5	workflow	10	1	1	0.073431087
+0010						3.2		DOCKET	5	NA	1
+0011	7				4.1	3.6		Compare			1
+id12	7	here		4.1	3.2			will	5	NA	NA	0.278543863
+id13	7	is				3.9			6	0	1	0.676880856
+id14	7	some		4.3	3.5	3.9		enable	6	0	0	0.589788698
+id15				5.1	3.4		3.4	comparing	2	0	1	0.714057643
+id16	8			5.4		2		two		0	1	
+id17	8	additional		5.2	2.7	2.3	4.5		1		1	0.766658534
+id18	2	text		6.1	2.9	2.2	4.2	or	7	1	0	0.960750789
+id19	1				3.8	3.5		more	10	1	1	0.051936283
+id20	2			5		1.5		versions	8	NA	1	0.705293513
+label6	5	researchers			2.2						NA	
+label7	2	who		1.2	2.1		3.2	DOCKET	5	1	NA	
+label8	5	develop		1.8	2.5		2.5	Integrate	4	1	NA	
+label9				1.7	3.2		4.1	will	6	1		0.522440419
+label10	3	Knowledge		1.6	3.1	1.2	3.7	perform	2	1	0	0.145648008
+label11	8	Providers		1.9	4.3		3.6	three	2	1	1	0.338352858
+label12	7	by		2.6	3.5				2	0	1	0.156855158
+label13		providing		2.1	3.6	3.4	2.5		8	1	1	0.607107299
+label14	3	a		1.6	3.7		2.1	types	6		0	0.530611364
+label15	3	domain		3.7			2.2	of	7		1	0.688575898
+label16				3.9	1.2			computations	7	0	0	0.711093294
+label17	4	agnostic		3.2	1.6		2.4		10		0	
+label18	4	and		4.5	3.4	4.5	3.5	The	12	1	0	0.340221451
+label19	4	researcher		5.2	2.3		3.2	first	2	0	1	0.227672845
+label20	4			1.4	2.2		3.2		4	0	1	0.442452456
+label21				5.6	2.7	2.1		computation	3	0	1	0.483810404
+label22	4	driven			2.6			is	8	1	1	0.688000388
+label23		solution		5.4			5.2	data	8	1		0.489211076
+label24	3	to		5.2	3.4	3.2	5.1	matching	10	1	1	0.511358345
+label25				4.3	3.6					NA		0.121394175
+label26		analyze		6.1	2.3		2.4	merging	12		1	0.834397365
+label27	5	data		3.5	3.4		2.1		4		1	0.368586204
+label28	5	to		3.2	4.2	4.5	2.2	selecting	4	NA	1	0.908565659
+label29	5	extract		5.2	5.1					1		0.036717149
+label30		knowledge		2.8	3.6		1.5	The	7	1	0	0.088937801
