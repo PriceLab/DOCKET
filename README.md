@@ -35,13 +35,13 @@ To connect to the DOCKET docker container:
 
 Connect to the container and run:
 
-  ~/nextflow run hello_docket.nf
+  ~/nextflow run docket_study --infile test/dataset1.txt --docket test/ds1_test
 
 ## Python sample
 
 Connect to the container and run:
 
-  python scripts/hello_docket.py --files data/hello_docket.txt
+  python scripts/hello_docket.py --files test/hello_docket.txt
 
 ## Tests
 

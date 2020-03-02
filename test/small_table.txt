@@ -1,4 +1,4 @@
-id	A	B	C	D	E	F	G	H	I	J	K	L
+	A	B	C	D	E	F	G	H	I	J	K	L
 id1	1	2	3	4	5	5	4	3	2	1	1	2
 id2	2	4	6	8	10	2	4	6	8	10	12	14
 id3	3	6	9	12	15	3	6	9	12	15	15	12
