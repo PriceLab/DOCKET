@@ -1,0 +1,18 @@
+#!/bin/env bash
+
+if [ $# -lt 2 ]
+then
+  echo "Provide at least 2 arguments \(i.e. the names of 2 files\)"
+fi
+
+if [ $# -eq 2 ]
+then
+  echo "Merging files $1 and $2"
+  python scripts/ingest.py --file1 $1 --file2 $2
+fi
+
+if [ $# -gt 2 ]
+then
+  echo "Merging files $1 and $2 using configuration file $3"
+  python scripts/ingest.py --file1 $1 --file2 $2 --config_file $3
+fi

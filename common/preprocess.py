@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import common.file_io as io
 
 
 # -------------------------------------------------------------------------
@@ -117,57 +116,6 @@ def generate_occurrence_counts(data, based_on=None, to_lower=False,
     return counts
 
 
-# Load data and remove low-information columns
-# config: Series containing file information (path, separator, etc)
-# filter_frac: Remove columns for which fraction of missing values is >= 1 - filter_frac
-def load_and_eliminate(config, base_dir=None, filter_frac=None):
-    filter_frac = 0.0 if filter_frac is None else filter_frac
-
-    # Load file data from configuration
-    data = io.load_file_data_from_config(config, base_dir)
-    nrows, ncols = data.shape
-
-    # Get information to be used in eliminating low-information columns
-    unique_value_counts = np.array([len(data[col].unique()) for col in data.columns])
-    null_counts = np.array([sum(data[col].isnull()) for col in data.columns])
-
-    # Eliminate low-information columns
-    keep_condition = np.array(unique_value_counts > 1) & np.array(null_counts < nrows * (1 - filter_frac))
-    keep_columns = data.columns[keep_condition]
-    data = data[keep_columns]
-
-    return data
-
-
-# Load data sets, eliminate low-information columns, merge and reindex (if index values are not all unique)
-def load_and_merge_datasets(io_config, base_dir=None):
-    # Load data sets, eliminating low-information columns
-    file_ids = io_config.columns
-    datasets = {}
-    for file_id in file_ids:
-        data = load_and_eliminate(io_config[file_id], base_dir=base_dir)
-        datasets[file_id] = data
-
-    # Merge data sets
-    data = datasets[file_ids[0]]
-    for file_id in file_ids[1:]:
-        data = data.merge(datasets[file_id], how='left', left_index=True, right_index=True)
-
-    idx = data.index
-    idx_cnts = idx.value_counts()[idx.unique()]  # Retain original ordering
-    if len(idx_cnts) < len(idx):
-        # Convenience function for generating unique index ids
-        def generate_unique_ids(id_, count):
-            new_ids = list(zip([id_]*count, list(range(count))))
-            return [f'{id1}.{id2}' for id1, id2 in new_ids]
-
-        new_index = [generate_unique_ids(id_, cnt) if cnt > 1 else [id_] for id_, cnt in zip(idx_cnts.index, idx_cnts)]
-        new_index = [idx for sublist in new_index for idx in sublist]
-        data.index = new_index
-
-    return data
-
-
 # Convenience function to convert string to lowercase and replace spaces with a specified character
 def string_process(input_val, replace_char='-'):
     input_val = str(input_val)
@@ -182,6 +130,27 @@ def random_norm_sample(mean, std, min_, max_):
     while samp < min_ or samp > max_:
         samp = np.random.normal(mean, std)
     return samp
+
+
+# Remove low-information columns from a dataframe
+# data: Pandas dataframe
+# filter_frac: Remove columns for which fraction of missing values is >= 1 - filter_frac
+def eliminate_low_information_columns(data, filter_frac=None):
+    filter_frac = 0.0 if filter_frac is None else filter_frac
+
+    # Get dimensions of the data
+    nrows, ncols = data.shape
+
+    # Get information to be used in eliminating low-information columns
+    unique_value_counts = np.array([len(data[col].unique()) for col in data.columns])
+    null_counts = np.array([sum(data[col].isnull()) for col in data.columns])
+
+    # Eliminate low-information columns
+    keep_condition = np.array(unique_value_counts > 1) & np.array(null_counts < nrows * (1 - filter_frac))
+    keep_columns = data.columns[keep_condition]
+    data = data[keep_columns]
+
+    return data
 
 
 # Fill missing numerical values, convert string values to lowercase and replace spaces
