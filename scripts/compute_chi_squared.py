@@ -29,7 +29,7 @@ def main(cl_attr_counts_file, cl_members_file):
         total_members_count = len(cl1_members) + len(cl2_members)
 
         # Skip current cluster hierarchy level for low total members count
-        if total_members_count < 50:
+        if total_members_count < 20:
             continue
 
         enrich_results = []

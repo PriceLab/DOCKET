@@ -10,6 +10,7 @@ import re
 import gzip
 import json
 import pandas as pd
+import common.preprocess as preprocess
 
 
 # -------------------------------------------------------------------------
@@ -75,54 +76,129 @@ def write_json(data, out_file):
             f.write(json.dumps(data))
 
 
-# Load configuration for handling file I/O and preprocessing
-def load_io_config(file_path=None, config_path=None, base_dir=None):
-
-    # Generate or load file I/O configuration
-    if isinstance(file_path, str):
-        config = '{"f1": {"path": "' + file_path + \
-                 '"}, "default": {"sep": "\\t", "index_col": 0, "header": 0}}'
-        config = json.loads(config)
-    elif isinstance(config_path, str):
-        # Prepend base directory path, if provided
-        config_path = config_path if base_dir is None else f'{base_dir}/{config_path}'
-        config = pd.read_json(config_path)
-    else:
-        print('Error: No valid file path was provided! File load returned None.')
-        return None
+# Load (or generate) configuration for file I/O (supports 1 or more input files). If there are more than 2 input files,
+# user can specify paths and file I/O settings for additional files in the configuration file located at config_path.
+def load_io_config(file1_path=None, file2_path=None, base_dir=None, config_path=None, config_base_dir=None):
+    assert isinstance(file1_path, str) or isinstance(file2_path, str) or isinstance(config_path, str)
 
     # Specify full list of file load settings
-    index = ['path', 'sep', 'index_col', 'header']
+    index = ['path', 'sep', 'index_col', 'header', 'comment']
+    default_settings = [None, '\t', 0, 0, None]
+
+    # Load or generate file I/O configuration
+    config = {}
+    # Get file1 path, if provided
+    if isinstance(file1_path, str):
+        file1_path = file1_path if base_dir is None else f'{base_dir}/{file1_path}'
+        config["f1"] = {"path": file1_path}
+
+    # Get file2 path, if provided
+    if isinstance(file2_path, str):
+        file2_path = file2_path if base_dir is None else f'{base_dir}/{file2_path}'
+        config["f2"] = {"path": file2_path}
+
+    # Initialize default file I/O settings
+    for _, f_config in config.items():
+        for k, v in zip(index, default_settings):
+            if k == "path":
+                continue
+            else:
+                f_config[k] = v
+
+    # Get additional settings from file I/O configuration file, if provided
+    if isinstance(config_path, str):
+        # Prepend base directory path, if provided, and load the configuration file
+        config_path = config_path if config_base_dir is None else f'{config_base_dir}/{config_path}'
+        loaded_config = load_json(config_path)
+
+        # Get default file I/O settings, if available
+        if "default" in list(loaded_config.keys()):
+            defaults = loaded_config["default"]
+            del loaded_config["default"]
+        else:
+            defaults = {}
+
+        # Merge loaded configuration with existing
+        existing_file_list = list(config.keys())
+
+        # Add new files to config list and set file I/O settings for new and existing files
+        for f_id, f_config in loaded_config.items():
+            if f_id not in existing_file_list:
+                # Create an entry for new file
+                config[f_id] = {"path": None}
+
+            # Get file path, if provided
+            if "path" in list(f_config.keys()):
+                f_path = f_config["path"]
+                config[f_id]["path"] = f_path if base_dir is None else f'{base_dir}/{f_path}'
+
+            # Set file I/O settings
+            for k, v in zip(index, default_settings):
+                if k == "path":
+                    continue
+                elif k in list(f_config.keys()):
+                    config[f_id][k] = f_config[k]
+                elif k in list(defaults.keys()):
+                    config[f_id][k] = defaults[k]
+                else:
+                    config[f_id][k] = v
 
     # Load information about files to read and preprocess
     config = pd.DataFrame(config, index=index)
-    file_ids = list(config.columns)
-    if 'default' in file_ids:
-        defaults = pd.Series(config['default'], index=index)
-        config.drop('default', axis=1, inplace=True)
-        file_ids.remove('default')
-    else:
-        defaults = pd.Series(index=index)
-
-    # Expand imported configuration with default values
-    for file_id in file_ids:
-        options = [opt2 if pd.isnull(opt1) else opt1 for opt1, opt2 in zip(config[file_id], defaults)]
-        config[file_id] = pd.Series(options, index=index)
 
     return config
 
 
 # Load data from a file based on specified configuration (assumes that load_io_config has been called)
-def load_file_data_from_config(config, base_dir=None):
-    # Get file load parameters
-    path, sep, index_col, header = config
-    path = path if base_dir is None else f'{base_dir}/{path}'
-    sep = ',' if pd.isnull(sep) else sep
+def load_file_data_from_config(config):
+    path, sep, index_col, header, comment = config
+
+    if path is None:
+        print('Error: Null file path provided! Cannot load file.')
+        return None
+
+    # Set file load parameters
+    sep = '\t' if pd.isnull(sep) else sep
     index_col = None if pd.isnull(index_col) else index_col
     header = None if pd.isnull(header) else header
+    comment = None if pd.isnull(comment) else comment
 
-    # Load and return data
-    data = pd.read_csv(path, sep=sep, index_col=index_col, header=header)
+    # Load data
+    data = pd.read_csv(path, sep=sep, index_col=index_col, header=header, comment=comment)
+
+    # For duplicate index values, drop all but the first row
+    data = data.loc[~data.index.duplicated(keep='first')]
+
+    return data
+
+
+# Load data from a files based on specified configuration (assumes that load_io_config has been called)
+def load_datasets_from_config(io_config):
+    # Load data sets, eliminating low-information columns
+    file_ids = io_config.columns
+    datasets = {}
+    for file_id in file_ids:
+        data = load_file_data_from_config(io_config[file_id])
+        datasets[file_id] = data
+
+    # Merge data sets
+    data = datasets[file_ids[0]]
+    for file_id in file_ids[1:]:
+        data = data.merge(datasets[file_id], how='outer', left_index=True, right_index=True,
+                          sort=True, suffixes=('_1', '_2'))
+
+    idx = data.index
+    idx_cnts = idx.value_counts()[idx.unique()]  # Retain original ordering
+    if len(idx_cnts) < len(idx):
+        # Convenience function for generating unique index ids
+        def generate_unique_ids(id_, count):
+            new_ids = list(zip([id_]*count, list(range(count))))
+            return [f'{id1}.{id2}' for id1, id2 in new_ids]
+
+        new_index = [generate_unique_ids(id_, cnt) if cnt > 1 else [id_] for id_, cnt in zip(idx_cnts.index, idx_cnts)]
+        new_index = [idx for sublist in new_index for idx in sublist]
+        data.index = new_index
+
     return data
 
 
