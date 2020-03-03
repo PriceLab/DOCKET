@@ -25,6 +25,7 @@ histL = params.histL
 process ingest_file {
 	/* read the file, store contents as row-wise and column-wise json */
 	/* temporary: keeping only the first instance (row) for each id */
+<<<<<<< HEAD
 	publishDir "$docket/data", mode: 'copyNoFollow'
 	input: file infile
 	output:
@@ -34,6 +35,14 @@ process ingest_file {
 		file 'rows_data.json.gz' into rowsdata
 	"""
 	ln -s $params.infile original_file
+=======
+	publishDir "$docket/data", mode: 'copy'
+	input: file infile
+	output:
+		file 'cols_data.json.gz' into colsdata
+		file 'rows_data.json.gz' into rowsdata
+	"""
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	${dbin}/ingest.pl $infile $params.format $params.skipDuplicates
 	"""
 }
@@ -46,9 +55,14 @@ process column_histograms {
 	/* column-wise histograms of observed values */
 	publishDir "$docket/data", mode: 'copy'
 	input: file cd from colsdata
+<<<<<<< HEAD
 	output:
 	    file 'cols_hist.json.gz' into colshist
 	    file 'cols_types.json.gz' into colstypes
+=======
+	output: file 'cols_hist.json.gz' into colshist
+	output: file 'cols_types.json.gz' into colstypes
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	"""
 	$dbin/compute_hist.pl $cd cols_hist.json cols_types.json
 	gzip cols_hist.json cols_types.json
@@ -58,10 +72,16 @@ process compute_col_hist_fingerprints {
 	/* compute and serialize fingerprints of column-wise histograms of observed values */
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file ch from colshist
+<<<<<<< HEAD
 	output:
 	    file 'cols_hist_fp.trim.gz' into colshistfp
 	    file 'cols_hist_fp.fp' into colshistfpser
 	    file 'cols_hist_fp.id' into colshistfpserids
+=======
+	output: file 'cols_hist_fp.trim.gz' into colshistfp
+	output: file 'cols_hist_fp.fp' into colshistfpser
+	output: file 'cols_hist_fp.id' into colshistfpserids
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	"""
 	$dbin/compute_fp.pl $ch $histL | gzip -c > cols_hist_fp.raw.gz
 	$dbin/filterTable.pl cols_hist_fp.raw.gz 1 $params.minTriples | gzip -c > cols_hist_fp.trim.gz
@@ -90,9 +110,14 @@ process compare_col_hist_fingerprints {
 	/* compare fingerprints of column-wise histograms of observed values */
 	publishDir "$docket/comparisons", mode: 'copy'
 	input: file chf from colshistfpser
+<<<<<<< HEAD
 	output:
 	    file 'cols_hist_fp.aaa.gz' into chfaaa
 	    file 'cols_hist_fp.aaa.hist' into chfaaahist
+=======
+	output: file 'cols_hist_fp.aaa.gz' into chfaaa
+	output: file 'cols_hist_fp.aaa.hist' into chfaaahist
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	"""
 	$lphbin/searchLPHs.pl $chf 0 1000000 cols_hist_fp.aaa.hist | gzip -c > cols_hist_fp.aaa.gz
 	"""
@@ -102,9 +127,14 @@ process index_col_hist_fingerprints {
 	errorStrategy 'ignore'
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file chf from colshistfp
+<<<<<<< HEAD
 	output:
 	    file 'cols_hist_fp.tree' into colshistfpindex
 	    file 'cols_hist_fp.names' into colshistfpnames
+=======
+	output: file 'cols_hist_fp.tree' into colshistfpindex
+	output: file 'cols_hist_fp.names' into colshistfpnames
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	"""
 	$dbin/annoyIndexGz.py --file $chf --L $histL --norm 1 --out cols_hist_fp
 	"""
@@ -113,9 +143,14 @@ process KNN_col_hist_fingerprints {
 	/* find k nearest neighbors of column-wise histograms, using annoy */
 	errorStrategy 'ignore'
 	publishDir "$docket/comparisons", mode: 'copy'
+<<<<<<< HEAD
 	input:
 	    file chfi from colshistfpindex
 	    file chfn from colshistfpnames
+=======
+	input: file chfi from colshistfpindex
+	input: file chfn from colshistfpnames
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	output: file 'cols_hist_fp.knn.gz'
 	"""
 	$dbin/annoyQueryAll.py --index $chfi --names $chfn --L $histL --k 100 | gzip -c > cols_hist_fp.knn.gz
@@ -130,9 +165,14 @@ process row_histograms {
 	/* row-wise histograms of observed values */
 	publishDir "$docket/data", mode: 'copy'
 	input: file rd from rowsdata
+<<<<<<< HEAD
 	output:
 	    file 'rows_hist.json.gz' into rowshist
 	    file 'rows_types.json.gz' into rowstypes
+=======
+	output: file 'rows_hist.json.gz' into rowshist
+	output: file 'rows_types.json.gz' into rowstypes
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	"""
 	$dbin/compute_hist.pl $rd rows_hist.json rows_types.json
 	gzip rows_hist.json rows_types.json
@@ -183,9 +223,14 @@ process serialize_cent_row_fingerprints {
 	/* serialize centered row-wise fingerprints */
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file rfp from rowscentfp
+<<<<<<< HEAD
 	output:
 	    file 'rows_fp.fp' into rowsfp
 	    file 'rows_fp.id' into rowsfpids
+=======
+	output: file 'rows_fp.fp' into rowsfp
+	output: file 'rows_fp.id' into rowsfpids
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	"""
 	$lphbin/serializeLPH.pl rows_fp $L 1 0 $rfp
 	"""
@@ -194,9 +239,14 @@ process compare_row_fingerprints {
 	/* compare fingerprints of rows */
 	publishDir "$docket/comparisons", mode: 'copy'
 	input: file rfp from rowsfp
+<<<<<<< HEAD
 	output:
 	    file 'rows_fp.aaa.gz' into rowsaaa
 	    file 'rows_fp.aaa.hist' into rowsaaahist
+=======
+	output: file 'rows_fp.aaa.gz' into rowsaaa
+	output: file 'rows_fp.aaa.hist' into rowsaaahist
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	"""
 	$lphbin/searchLPHs.pl $rfp 0 1000000 rows_fp.aaa.hist | gzip -c > rows_fp.aaa.gz
 	"""
@@ -206,9 +256,14 @@ process index_row_fingerprints {
 	errorStrategy 'ignore'
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file rfp from rowstrimfp
+<<<<<<< HEAD
 	output:
 	    file 'rows_fp.tree' into rowsfpindex
 	    file 'rows_fp.names' into rowsfpnames
+=======
+	output: file 'rows_fp.tree' into rowsfpindex
+	output: file 'rows_fp.names' into rowsfpnames
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	"""
 	$dbin/annoyIndexGz.py --file $rfp --L $L --norm 1 --out rows_fp
 	"""
@@ -217,9 +272,14 @@ process KNN_row_fingerprints {
 	/* find k nearest neighbors of rows, using annoy */
 	errorStrategy 'ignore'
 	publishDir "$docket/comparisons", mode: 'copy'
+<<<<<<< HEAD
 	input:
 	    file rfpi from rowsfpindex
 	    file rfpn from rowsfpnames
+=======
+	input: file rfpi from rowsfpindex
+	input: file rfpn from rowsfpnames
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	output: file 'rows_fp.knn.gz'
 	"""
 	$dbin/annoyQueryAll.py --index $rfpi --names $rfpn --L $L --k 100 | gzip -c > rows_fp.knn.gz
@@ -229,9 +289,14 @@ process row_cluster_hier {
     /* Compute row-wise clustering */
     publishDir "$docket/analyses", mode: 'copy'
     input: file rpca from rowsfppca
+<<<<<<< HEAD
     output:
         file 'rows_hier_linkage.txt.gz' into rows_hier_linkage
         file 'rows_hier_clusters.txt.gz' into rows_hier_clust
+=======
+    output: file 'rows_hier_linkage.txt.gz' into rows_hier_linkage
+    output: file 'rows_hier_clusters.txt.gz' into rows_hier_clust
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
     """
     $dbin/hierarchical_clustering.py --source $rpca --linkage_out rows_hier_linkage.txt.gz | gzip -c > rows_hier_clusters.txt.gz
     """
@@ -239,9 +304,14 @@ process row_cluster_hier {
 process plot_PCA_row_fingerprints {
 	/* plot PC1-PC2 on fingerprints of rows */
 	publishDir "$docket/visualizations", mode: 'copy'
+<<<<<<< HEAD
 	input:
 	    file pca from rowsfppca
 	    file rhc from rows_hier_clust
+=======
+	input: file pca from rowsfppca
+	input: file rhc from rows_hier_clust
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	output: file 'rows_fp.pc1_pc2.pdf'
 	"""
 	$dbin/plotpca.py $pca rows_fp.pc1_pc2.pdf --clustering $rhc --clusters $params.rowclusters
@@ -291,9 +361,14 @@ process serialize_cent_col_fingerprints {
 	/* serialize centered col-wise fingerprints */
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file cfp from colscentfp
+<<<<<<< HEAD
 	output:
 	    file 'cols_fp.fp' into colsfp
 	    file 'cols_fp.id' into colsfpids
+=======
+	output: file 'cols_fp.fp' into colsfp
+	output: file 'cols_fp.id' into colsfpids
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	"""
 	$lphbin/serializeLPH.pl cols_fp $L 1 1 $cfp
 	"""
@@ -302,9 +377,14 @@ process compare_col_fingerprints {
 	/* compare fingerprints of columns */
 	publishDir "$docket/comparisons", mode: 'copy'
 	input: file cfp from colsfp
+<<<<<<< HEAD
 	output:
 	    file 'cols_fp.aaa.gz' into colsaaa
 	    file 'cols_fp.aaa.hist' into colsaaahist
+=======
+	output: file 'cols_fp.aaa.gz' into colsaaa
+	output: file 'cols_fp.aaa.hist' into colsaaahist
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	"""
 	$lphbin/searchLPHs.pl $cfp 0 1000000 cols_fp.aaa.hist | gzip -c > cols_fp.aaa.gz
 	"""
@@ -314,9 +394,14 @@ process index_col_fingerprints {
 	errorStrategy 'ignore'
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file cfp from colstrimfp
+<<<<<<< HEAD
 	output:
 	    file 'cols_fp.tree' into colsfpindex
 	    file 'cols_fp.names' into colsfpnames
+=======
+	output: file 'cols_fp.tree' into colsfpindex
+	output: file 'cols_fp.names' into colsfpnames
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	"""
 	$dbin/annoyIndexGz.py --file $cfp --L $L --norm 1 --out cols_fp
 	"""
@@ -325,9 +410,14 @@ process KNN_col_fingerprints {
 	/* find k nearest neighbors of columns, using annoy */
 	errorStrategy 'ignore'
 	publishDir "$docket/comparisons", mode: 'copy'
+<<<<<<< HEAD
 	input:
 	    file cfpi from colsfpindex
 	    file cfpn from colsfpnames
+=======
+	input: file cfpi from colsfpindex
+	input: file cfpn from colsfpnames
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	output: file 'cols_fp.knn.gz'
 	"""
 	$dbin/annoyQueryAll.py --index $cfpi --names $cfpn --L $L --k 100 | gzip -c > cols_fp.knn.gz
@@ -337,9 +427,14 @@ process col_cluster_hier {
     /* Compute col-wise clustering */
     publishDir "$docket/analyses", mode: 'copy'
     input: file cpca from colsfppca
+<<<<<<< HEAD
     output:
         file 'cols_hier_linkage.txt.gz' into cols_hier_linkage
         file 'cols_hier_clusters.txt.gz' into cols_hier_clust
+=======
+    output: file 'cols_hier_linkage.txt.gz' into cols_hier_linkage
+    output: file 'cols_hier_clusters.txt.gz' into cols_hier_clust
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
     """
     $dbin/hierarchical_clustering.py --source $cpca --linkage_out cols_hier_linkage.txt.gz | gzip -c > cols_hier_clusters.txt.gz
     """
@@ -347,9 +442,14 @@ process col_cluster_hier {
 process plot_PCA_col_fingerprints {
 	/* plot PC1-PC2 on fingerprints of columns */
 	publishDir "$docket/visualizations", mode: 'copy'
+<<<<<<< HEAD
 	input:
 	    file pca from colsfppca
 	    file chc from cols_hier_clust
+=======
+	input: file pca from colsfppca
+	input: file chc from cols_hier_clust
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 	output: file 'cols_fp.pc1_pc2.pdf'
 	"""
 	$dbin/plotpca.py $pca cols_fp.pc1_pc2.pdf --clustering $chc --clusters $params.colclusters
@@ -382,10 +482,21 @@ process compute_categorical_associations {
 process row_generate_cluster_membership {
     /* Compute row-wise clustering */
     publishDir "$docket/analyses", mode: 'copy'
+<<<<<<< HEAD
     input:
         file rpca from rowsfppca
         file rlink from rows_hier_linkage
     output: file 'row_cluster_members.json.gz' into rows_hclust_members
+=======
+
+    input:
+    file rpca from rowsfppca
+    file rlink from rows_hier_linkage
+
+    output:
+    file 'row_cluster_members.json.gz' into rows_hclust_members
+
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
     """
     $dbin/generate_cluster_membership.py \
       --source $rpca \
@@ -397,10 +508,21 @@ process row_generate_cluster_membership {
 process pairwise_occurrence_counts {
     /* Get occurrence counts for all attributes and parent/children trios for branch points in cluster hierarchy */
     publishDir "$docket/analyses", mode: 'copy'
+<<<<<<< HEAD
     input:
         file cdata from colsdata
         file rhc_members from rows_hclust_members
     output: file 'pairwise_occurrence_counts.json.gz' into occur_counts
+=======
+
+    input:
+    file cdata from colsdata
+    file rhc_members from rows_hclust_members
+
+    output:
+    file 'pairwise_occurrence_counts.json.gz' into occur_counts
+
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
     """
     $dbin/pairwise_occurrence_counts.py \
       --source $cdata \
@@ -412,10 +534,21 @@ process pairwise_occurrence_counts {
 process generate_enrichment_results {
     /* Calculate and write to output enrichment results */
     publishDir "$docket/analyses/enrichment", mode: 'copy'
+<<<<<<< HEAD
     input:
         file cl_members from rows_hclust_members
         file counts from occur_counts
     output: file 'enrich_results_*.txt.gz' into enrichment_results
+=======
+
+    input:
+    file cl_members from rows_hclust_members
+    file counts from occur_counts
+
+    output:
+    file 'enrich_results_*.txt.gz' into enrichment_results
+
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
     """
     $dbin/compute_chi_squared.py \
       --counts_file $counts \
@@ -426,9 +559,17 @@ process generate_enrichment_results {
 process copy_notebooks {
     /* Copy Jupyter notebook for visualizing results */
     publishDir "$docket/visualizations", mode: 'copy'
+<<<<<<< HEAD
     output:
         file 'results.py'
         file 'review-docket-study-results.ipynb'
+=======
+
+    output:
+    file 'results.py'
+    file 'review-docket-study-results.ipynb'
+
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
     """
     cp '$baseDir/common/results.py' .
     cp '$baseDir/notebooks/review-docket-study-results.ipynb' .

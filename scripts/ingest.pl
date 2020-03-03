@@ -6,6 +6,7 @@ use JSON;
 my($infile, $file_format, $skipDuplicates) = @ARGV;
 die unless $infile;
 
+<<<<<<< HEAD
 my $gzipped;
 if ($infile =~ /\.gz$/) {
 	$gzipped = 1;
@@ -14,6 +15,8 @@ if ($infile =~ /\.gz$/) {
 	`gzip -c $infile > original_data.gz`;
 }
 
+=======
+>>>>>>> 63027555d4c670efb98f291b0dc435a45b1c6378
 $file_format ||= determine_format($infile);
 my $info;
 if ($file_format eq 'xml') {
