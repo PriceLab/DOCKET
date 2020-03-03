@@ -16,44 +16,56 @@ import json
 import cyjupyter
 ```
 
+## An example of comparison between GDSC dataset and TCGA dataset in the genetic level
+#### It will detected the most high frequently mutated genes, and compare the mutation sites from the GDSC data set
+Command:
+```bash
+$ python docket_integration_interface.py \ 
+    Output/ comp \
+    config/Para_sim.json
+```
+Parameters description:
+Output/ : the output directory
+comp: Label for which process will the integration process do
+config/Para_sim.json: Parameter file
 
 ## An example of integration of gene mutation and drug sensitivity
 Command:
 ```bash
 $ python docket_integration_interface.py \
     Output/  mut_drugResponse \
-    data/Para1_integration.json data/Para2_integration.json
+    config/Para1_integration.json config/Para2_integration.json
 ```
 
 Parameters description:
 Output/ : the output directory
 mut_drugResponse: Label for which process will the integration process do
-data/Para1_integration.json: Parameter file
-data/Para2_integration.json: Parameter file
+config/Para1_integration.json: Parameter file
+config/Para2_integration.json: Parameter file
 
 ## An example of annotate the knowledge graph
 ```bash
 $ python docket_integration_interface.py \
     Output/  annotation \
-    data/Para1_annotation.json data/Para2_annotation.json
+    config/Para1_annotation.json config/Para2_annotation.json
 ```
 
 Parameters description:
 Output/ : the output directory
 annotation: Label for which process will the integration process do
-data/Para1_annotation.json: Parameter file 
-data/Para2_annotation.json: Parameter file
+config/Para1_annotation.json: Parameter file 
+config/Para2_annotation.json: Parameter file
 
 
 ## An example of visualize the knowledge graph
 ```bash
 $ python docket_integration_interface.py \
     Output/  visualization \
-    data/Para_visualization.json
+    config/Para_visualization.json
 ```
 
 Parameters description:
 Output/ : the output directory
 visualization: Label for which process will the integration process do
-data/Para_visulization.json: Parameter file
+config/Para_visulization.json: Parameter file
 
