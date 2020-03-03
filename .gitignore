@@ -1,6 +1,9 @@
 # Exclude subfolders in plugins folder
 docket/plugins/*/
 
+# Exclude test_data docket
+test/test_data.docket
+
 # Exclude nextflow folders
 work/
 .nextflow/
