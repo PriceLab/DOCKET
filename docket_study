@@ -28,12 +28,11 @@ process ingest_file {
 	publishDir "$docket/data", mode: 'copyNoFollow'
 	input: file infile
 	output:
-	    file 'original_data' into originaldata
+	    file 'original_data.gz' into originaldata
 	    path 'original_file'
 		file 'cols_data.json.gz' into colsdata
 		file 'rows_data.json.gz' into rowsdata
 	"""
-	cp $infile original_data
 	ln -s $params.infile original_file
 	${dbin}/ingest.pl $infile $params.format $params.skipDuplicates
 	"""
