@@ -4,10 +4,16 @@ docket/plugins/*/
 # Exclude test_data docket
 test/test_data.docket
 
+# Exclude local data sets
+datasets
+
 # Exclude nextflow folders
 work/
 .nextflow/
 .nextflow.*
+
+# Exclude jEdit backup files
+*~
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

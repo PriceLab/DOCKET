@@ -29,7 +29,7 @@ process ingest_file {
 	input: file infile
 	output:
 	    file 'original_data.gz' into originaldata
-	    path 'original_file'
+	    /* file 'original_file' */
 		file 'cols_data.json.gz' into colsdata
 		file 'rows_data.json.gz' into rowsdata
 	"""
@@ -370,7 +370,7 @@ process compute_categorical_associations {
 	input: file ctypes from colstypes
 	output: file 'cat_assoc.gz'
 	"""
-	$dbin/categorical_associations.py --infile $params.infile --types_file $ctypes --header_row 0 --index_col 0 | gzip -c > cat_assoc.gz
+	$dbin/categorical_associations.py --infile $params.infile --types_file $ctypes --header_row 0 --index_col 0 --comment '$params.comment' | gzip -c > cat_assoc.gz
 	"""
 }
 
