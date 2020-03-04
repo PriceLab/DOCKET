@@ -3,8 +3,8 @@ import os
 import sys
 import json
 import subprocess
-
-Script_dir = "./notebooks/" 
+Curr_dir = os.getcwd()
+Script_dir = Curr_dir+"/notebooks/" 
 User_output = sys.argv[1]
 
 if os.path.isdir(User_output) == False:
