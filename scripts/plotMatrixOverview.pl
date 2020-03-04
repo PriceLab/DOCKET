@@ -5,9 +5,10 @@ use GD;
 use JSON;
 use Scalar::Util qw(looks_like_number);
 
-my($docket) = @ARGV;
+my($docket, $sortCols, $sortRows) = @ARGV;
 my $ch = readJson("$docket/data/cols_hist.json.gz");
 my $rt = readJson("$docket/data/rows_types.json.gz");
+my(@data, @type, @col_nulls, @row_nulls);
 
 open DATA, "gunzip -c $docket/data/original_data.gz |";
 while (<DATA>) {
@@ -19,6 +20,31 @@ my @headers = split /\t/;
 foreach my $i (0..$#headers) {
 	$headers[$i] = $1 if $headers[$i] =~ /^\"(.+)\"$/;
 }
+my $j;
+while (<DATA>) {
+	next if /^#/;
+	chomp;
+	next unless $_;
+	my @v = split /\t/;
+	push @data, \@v;
+	foreach my $i (0..$#headers) {
+		my $v = $v[$i];
+		my $t;
+		$v = $1 if $v =~ /^\"(.+)\"$/;
+		if (length($v)==0 || $v =~ /^(NA|NULL)$/i) {
+			$t = 'null';
+			$col_nulls[$i]++;
+			$row_nulls[$j]++;
+		} else {
+			$t = looks_like_number($v) ? 'num' : 'str';
+		}
+		$type[$j][$i] = $t;
+	}
+	$j++;
+}
+close DATA;
+my $rows = scalar @data;
+
 #my @types = map {datatype($ch->{$headers[$_]})} (0..$#headers);
 
 my(%imColour, $background, $useBlackBackground, @idColor, $xmargin, $ymargin);
@@ -26,8 +52,8 @@ $xmargin = $ymargin = 10;
 my $xscale = 1;
 my $yscale = 1;
 my $width = scalar @headers;
-my $height = scalar keys %$rt;
-my %typeColor = qw/num lightblue str lightred mixed grey/;
+my $height = $rows;
+my %typeColor = qw/num blue str red mixed grey/;
 
 my $im = new GD::Image($width+2*$xmargin,$height+2*$ymargin);
 $im->interlaced('true');
@@ -37,22 +63,31 @@ DefineColours($im, 1);
 #	frect($im, $i,0,$i,$height, $typeColor{$types[$i]});
 #}
 
-my $j;
-while (<DATA>) {
-	chomp;
-	my(@v) = split /\t/;
-	foreach my $i (0..$#headers) {
-		my $v = $v[$i];
-		$v = $1 if $v =~ /^\"(.+)\"$/;
-		if (length($v)==0 || $v =~ /^(NA|NULL)$/i) {
+my(@sortedRows, @sortedCols);
+if ($sortCols eq 'nulls') {
+ 	@sortedCols = sort {$col_nulls[$a]<=>$col_nulls[$b]} (0..$#headers);
+} else {
+	@sortedCols = (0..$#headers);
+}
+if ($sortRows eq 'nulls') {
+	@sortedRows = sort {$row_nulls[$a]<=>$row_nulls[$b]} (0..$rows-1);
+} else {
+	@sortedRows = (0..$#data);
+}
+
+foreach my $j (0..$#sortedRows) {
+	my $row = $sortedRows[$j];
+	#my $rowdata = $data[$row];
+	foreach my $i (0..$#sortedCols) {
+		my $col = $sortedCols[$i];
+		my $t = $type[$row][$col];
+		if ($t eq 'null') {
 			frect($im, $i, $j, $i, $j, 'white');
 		} else {
-			frect($im, $i, $j, $i, $j, $typeColor{looks_like_number($v) ? 'num' : 'str'});
+			frect($im, $i, $j, $i, $j, $typeColor{$t});
 		}
 	}
-	$j++;
 }
-close DATA;
 
 open (PNG,">$docket/visualizations/data_overview.png") || warn "Couldn't write png file: $!\n";
 print PNG $im->png;
