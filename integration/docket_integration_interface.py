@@ -3,8 +3,8 @@ import os
 import sys
 import json
 import subprocess
-
-Script_dir = "./notebooks/" 
+Curr_dir = os.getcwd()
+Script_dir = Curr_dir+"/notebooks/" 
 User_output = sys.argv[1]
 
 if os.path.isdir(User_output) == False:
@@ -127,6 +127,7 @@ def main():
 				excute_jupyterNotebook(default_filename)
 
 				print("Finished! Please check the output file in " + default_filename)
+				
 		elif sys.argv[2] == 'annotation':
 			para1 = load_json(sys.argv[3])
 			para2 = load_json(sys.argv[4])
@@ -159,6 +160,7 @@ def main():
 				excute_jupyterNotebook(default_filename)
 
 				print("Finished! Please check the output file in " + default_filename)
+
 		elif sys.argv[2] == 'visualization':
 			para1 = load_json(sys.argv[3])
 			print(para1)
@@ -181,6 +183,27 @@ def main():
 					json.dump(content, fp, indent=2)
 				excute_jupyterNotebook(default_filename)
 
+		elif sys.argv[2] == 'comp':
+			para1 = load_json(sys.argv[3])
+			print(para1)
+			if len(sys.argv) == 4:
+				with open(Script_dir + "Integration_temp_similarity_compare.ipynb") as fp:
+			   		content = json.load(fp)
+
+				default_filename = User_output+"Integration_temp_similarity_compare.ipynb"
+				new_content = []
+				new_content.append('input_data = {')
+				for item in reformat_json(para1):
+					new_content.append(item)
+				new_content.append('}')
+
+				content['cells'][3]['source'] = new_content
+
+
+				jupyter_content = content
+				with open(default_filename, 'w') as fp:
+					json.dump(content, fp, indent=2)
+				excute_jupyterNotebook(default_filename)
 		else:
 			Print_Warning()
 

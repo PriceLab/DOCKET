@@ -1,0 +1,8 @@
+{
+    "File1":"../data/Mut_site_LUAD_GDSC.csv",
+    "File2":"../data/Mut_site_LUAD_TCGA.csv",
+    "File_out": "../Output/Mut_site_LUAD_TCGA.csv",
+    "Disease_type":"LUAD",
+    "Sample_label":"sample_barcode_tumor",
+    "Gene_label":"Hugo_Symbol"
+}
