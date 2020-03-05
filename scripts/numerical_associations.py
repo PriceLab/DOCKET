@@ -32,31 +32,34 @@ cols = []
 
 # select clearly numeric columns with at least 10 different values
 for i in types:
+    if i=='id': continue
     if 'NUM' in types[i] and not 'STR' in types[i] and types[i]['values']>=10:
         cols.append(i)
-
-if args.comment == '0':
-    data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row), low_memory=False)
-else:
-    data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row), comment=args.comment, low_memory=False)
 
 print("#numerical", len(cols), sep="\t")
 print('variableA', 'variableB', 'N', 'rho', 'pval', sep="\t")
 
-for i in range(len(cols)):
-    colA = cols[i]
-    if not colA in data: continue
-    array_A = data[colA].values
-    if len(array_A)>5 and len(set(array_A))>1:
-        for j in range(i+1,len(cols)):
-            colB = cols[j]
-            if not colB in data: continue
-            array_B = data[colB].values
-            if len(array_B)>5 and len(set(array_B))>1:
-                temp_df = pd.DataFrame({'A':array_A, 'B':array_B })
-                temp_df = temp_df.replace(0,np.nan)
-                temp_df = temp_df.dropna()
-                rho, pval = stats.spearmanr(temp_df['A'].values, temp_df['B'].values)
-                if pval <= 0.01:
-                    print(colA, colB, len(temp_df['A']), format(rho, '.3f'), format(pval, '.2e'), sep="\t")
-                    #print(temp_df)
+if cols:
+    if args.comment == '0':
+        data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row), low_memory=False)
+    else:
+        data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row), comment=args.comment, low_memory=False)
+
+
+    for i in range(len(cols)):
+        colA = cols[i]
+        if not colA in data: continue
+        array_A = data[colA].values
+        if len(array_A)>5 and len(set(array_A))>1:
+            for j in range(i+1,len(cols)):
+                colB = cols[j]
+                if not colB in data: continue
+                array_B = data[colB].values
+                if len(array_B)>5 and len(set(array_B))>1:
+                    temp_df = pd.DataFrame({'A':array_A, 'B':array_B })
+                    temp_df = temp_df.replace(0,np.nan)
+                    temp_df = temp_df.dropna()
+                    rho, pval = stats.spearmanr(temp_df['A'].values, temp_df['B'].values)
+                    if pval <= 0.01:
+                        print(colA, colB, len(temp_df['A']), format(rho, '.3f'), format(pval, '.2e'), sep="\t")
+                        #print(temp_df)

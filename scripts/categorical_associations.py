@@ -50,6 +50,7 @@ parser.add_argument('--sep', help='Delimiter to use', default='\t')
 parser.add_argument('--types_file', help='File with type counts')
 parser.add_argument('--index_col', help='Index of column to use as row labels', default=None)
 parser.add_argument('--header_row', help='Index of row to use as column labels', default=None)
+parser.add_argument('--comment', help='Character to treat as comment signal', default='#')
 args=parser.parse_args()
 
 types = load_json(args.types_file)
@@ -67,26 +68,30 @@ for i in sorted(types.keys()):
     elif 'NUM' in types[i] and types[i]['NUM']>=10:
         cols.append(i)
 
-#data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row))
-data = pd.read_csv(args.infile, sep=args.sep, index_col=int(args.index_col), header=int(args.header_row), comment='#')
-
 print("#categorical",len(cols),sep="\t")
 print('variableA', 'variableB', 'N', 'Theil_B_A', 'Theil_A_B', sep="\t")
 
-for i in range(len(cols)):
-    varA = cols[i]
-    if not varA in data: continue
-    for j in range(i+1,len(cols)):
-        varB = cols[j]
-        if not varB in data: continue
-        trim = pd.DataFrame({'A': data[varA].values, 'B': data[varB].values}).dropna()
-        if len(trim['A'])<10: continue
-        theil_B_given_A = theil_u(trim['A'],trim['B'])
-        theil_A_given_B = theil_u(trim['B'],trim['A'])
+if cols:
+    if args.comment == '0':
+        data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row), low_memory=False)
+    else:
+        data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row), comment=args.comment, low_memory=False)
+
+
+    for i in range(len(cols)):
+        varA = cols[i]
+        if not varA in data: continue
+        for j in range(i+1,len(cols)):
+            varB = cols[j]
+            if not varB in data: continue
+            trim = pd.DataFrame({'A': data[varA].values, 'B': data[varB].values}).dropna()
+            if len(trim['A'])<10: continue
+            theil_B_given_A = theil_u(trim['A'],trim['B'])
+            theil_A_given_B = theil_u(trim['B'],trim['A'])
         
-        if theil_B_given_A>=0.5 and theil_A_given_B>=0.5:
-            print(varA, varB, len(trim['A']), \
-                format(theil_B_given_A, '.3f'), \
-                format(theil_A_given_B, '.3f'), \
-                sep="\t")
+            if theil_B_given_A>=0.5 and theil_A_given_B>=0.5:
+                print(varA, varB, len(trim['A']), \
+                    format(theil_B_given_A, '.3f'), \
+                    format(theil_A_given_B, '.3f'), \
+                    sep="\t")
             
