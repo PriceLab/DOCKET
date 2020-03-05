@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
+import pandas as pd
+import matplotlib.pyplot as plt
+import plotly.express as px
+import scipy
+import numpy as np
 
-###Giving the PCA file, select the principle components for visulize. 
+###Giving the PCA file, select the principle components for visulize.
 def pca_plot(File_PCA, pca_sele1, pca_sele2):
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    import plotly.express as px
-    pca = pd.read_table(File_PCA,header=None)  
+    pca = pd.read_table(File_PCA,header=None)
     colnames = ['object']
     for i in range(1,pca.shape[1]):
         colnames.append('PC'+str(i))
@@ -34,12 +36,12 @@ def feature_association_category(data_for_test, columns):
     Label = []
     category_list = []
     for item in columns:
-        
+
         if str(data_for_test.loc[:,item].dtypes) == 'object' or str(data_for_test.loc[:,item].dtypes) == 'category' or str(data_for_test.loc[:,item].dtypes) == 'bool' or str(data_for_test.loc[:,item].dtypes) == 'int64':
             category_list.append(item)
         elif str(data_for_test.loc[:,item].dtypes) == 'int64' and len(set(data_for_test.loc[:,item])) < 5:
             category_list.append(item)
-    
+
     for item1 in category_list:
         category_1 = set(data_for_test[item1])
         #print(category_1)
@@ -48,13 +50,13 @@ def feature_association_category(data_for_test, columns):
                 if item1 != item2:
                     category_2 = set(data_for_test[item2])
                     if(len(category_2)) < 10:
-                        
+
                         for group_A in category_1:
                             if isinstance(group_A, float) == False :
-                                if isinstance(group_A, bool) == True: 
+                                if isinstance(group_A, bool) == True:
                                     group_A == True
                                     group_not_A = False
-                                #if isinstance(group_A, int) == True:    
+                                #if isinstance(group_A, int) == True:
                                 else:
                                     group_A = set([group_A])
                                     #print(group_A)
@@ -68,7 +70,7 @@ def feature_association_category(data_for_test, columns):
 
                                 for group_B in category_2:
                                     if isinstance(group_B, float) == False :
-                                        if isinstance(group_B, bool) == True: 
+                                        if isinstance(group_B, bool) == True:
                                             group_B == True
                                             group_not_B = False
 
@@ -105,15 +107,15 @@ def feature_association_category(data_for_test, columns):
                                             elif  oddsratio < 1:
                                                 Label.append("UnderRepresented")
 
-                               
+
     df_result_category = pd.DataFrame({
-        'FactorA':item1_list, 'CategoryA':group_A_list, 
+        'FactorA':item1_list, 'CategoryA':group_A_list,
         'FactorB':item2_list, 'CategoryB':group_B_list,
         "A_B":A_B_list, 'A_notB':A_notB_list,
         "notA_B":notA_B_list, 'notA_notB':notA_notB_list,
         'pvalue':p_list,'oddsratio':odds_list,
         'Label':Label
-    })    
+    })
 
     return(df_result_category)
 
@@ -134,7 +136,7 @@ def feature_association_category_numerical(data_for_test, columns):
         category_list.append(item)
 
     for item2 in category_list:
-        if str(data_for_test.loc[:,item2].dtypes) == 'int64' or str(data_for_test.loc[:,item2].dtypes) == 'float64':  
+        if str(data_for_test.loc[:,item2].dtypes) == 'int64' or str(data_for_test.loc[:,item2].dtypes) == 'float64':
             if len( set(data_for_test[item2])) > 10:
                 print(item2)
 
@@ -143,7 +145,7 @@ def feature_association_category_numerical(data_for_test, columns):
                         category_1 = set(data_for_test[item1])
                         for group_A in category_1:
                             if isinstance(group_A, float) == False  and isinstance(group_A, int) == False:
-                            #if type(group_A) != float and type(group_A) != int: 
+                            #if type(group_A) != float and type(group_A) != int:
                                 if isinstance(group_A, bool) == True:
                                 #if type(group_A) == bool:
                                     group_A == True
@@ -161,9 +163,9 @@ def feature_association_category_numerical(data_for_test, columns):
                                 array_A = array_A[~np.isnan(array_A)]
 
                                 array_B = df_notA.loc[:,item2].values
-                                
+
                                 array_B = array_B[~np.isnan(array_B)]
-                                
+
                                 if len(array_A) > 5 and len(set(array_A))>1:
                                     if  len(array_B) > 5 and len(set(array_B))>1:
                                         #print(array_A)
@@ -186,9 +188,9 @@ def feature_association_category_numerical(data_for_test, columns):
 
     df_result_category = pd.DataFrame({
             'FactorA':item1_list, 'CategoryA':group_A_list, 'CategroyB':group_notA_list,
-            'FactorB':item2_list, 
+            'FactorB':item2_list,
             'pvalue':p_list,'SE':se_list
-        })    
+        })
 
     return(df_result_category)
 
@@ -210,20 +212,20 @@ def feature_association_numeric_numeric(data_for_test, columns):
         category_list.append(item)
 
     for item2 in category_list:
-        if str(data_for_test.loc[:,item2].dtypes) == 'int64' or str(data_for_test.loc[:,item2].dtypes) == 'float64':  
+        if str(data_for_test.loc[:,item2].dtypes) == 'int64' or str(data_for_test.loc[:,item2].dtypes) == 'float64':
             if len( set(data_for_test[item2])) > 10:
-                
+
                 for item1 in category_list:
                     if item1 != item2:
-                        if str(data_for_test.loc[:,item1].dtypes) == 'int64' or str(data_for_test.loc[:,item1].dtypes) == 'float64':  
-                    
+                        if str(data_for_test.loc[:,item1].dtypes) == 'int64' or str(data_for_test.loc[:,item1].dtypes) == 'float64':
+
                             array_A = data_for_test[item1].values
-                    
+
                             array_B = data_for_test[item2].values
-                            
+
                             temp_df = pd.DataFrame({'A':array_A, 'B':array_B })
                             temp_df = temp_df.dropna()
-                        
+
                             if len(array_A) > 5 and len(set(array_A))>1:
                                 if  len(array_B) > 5 and len(set(array_B))>1:
                                     rho, pval = scipy.stats.spearmanr(temp_df['A'].values, temp_df['B'].values)
@@ -234,10 +236,10 @@ def feature_association_numeric_numeric(data_for_test, columns):
                                         odds_list.append(rho)
 
     df_result_category = pd.DataFrame({
-            'FactorA':item1_list, 
-            'FactorB':item2_list, 
+            'FactorA':item1_list,
+            'FactorB':item2_list,
             'pvalue':p_list,
             'rho':odds_list
-        })    
+        })
 
     return(df_result_category)

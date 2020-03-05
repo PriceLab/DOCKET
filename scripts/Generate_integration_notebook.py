@@ -4,7 +4,7 @@ import sys
 import json
 import subprocess
 
-Script_dir = "/Users/gloria/Documents/ISB/Translator/project/Script/" 
+Script_dir = "/Users/gloria/Documents/ISB/Translator/project/Script/"
 User_output = "/Users/gloria/Documents/ISB/Translator/project/Output/"
 
 
@@ -26,7 +26,7 @@ def excute_jupyterNotebook(default_filename) :
 
 def Print_Warning():
 	print("Argument: Generate_integration_notebook.py integration Para1.json Para2.json")
-	
+
 
 def load_json(Para_file):
 	import json
@@ -41,7 +41,7 @@ def reformat_json(json):
 		if isinstance(json[i], str):
 			new_content.append('"'+i + '"' + ':' + '"'+ json[i]+ '",' + '\n')
 		if isinstance(json[i], list):
-			temp = '"'+i + '"' + ': [' 
+			temp = '"'+i + '"' + ': ['
 			for item in json[i]:
 				temp = temp + '"' +item + '"' +','
 			temp = temp + '],\n'
@@ -49,10 +49,17 @@ def reformat_json(json):
 
 	return(new_content)
 
+def Print_Warning_PCA():
+	print("Argument: Generate_jupyterNotebook.py PCA_Visual PCA_File PC_sele_1 PC_sele_2")
+	print("PCA_Visual: Label for PCA visualization jupyter notebook"  )
+	print("PCA_File: The PCA data file"  )
+	print("PC_sele_1: The first Principle component you choose to plot"  )
+	print("PC_sele_2: The first Principle component you choose to plot"  )
+
 def main():
 	if len(sys.argv) < 3:
 		Print_Warning_PCA()
-	
+
 	else:
 		if sys.argv[1] == 'integration':
 			para1 = load_json(sys.argv[2])
@@ -79,7 +86,7 @@ def main():
 				new_content.append('}')
 
 				content['cells'][4]['source'] = new_content
-				
+
 
 				jupyter_content = content
 				with open(default_filename, 'w') as fp:
@@ -94,7 +101,7 @@ def main():
 		else:
 			Print_Warning_PCA()
 
-		
+
 
 if __name__ == "__main__":
 	main()
