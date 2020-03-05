@@ -13,10 +13,13 @@ COPY requirements.txt /install
 # subversion is needed for the svn to only download Perl data-fingerprints bin
 # Perl data-fingerprints has hardcoded the location of env so softlink it
 RUN apt-get update && apt-get install -y openjdk-8-jdk \
-  libjson-perl subversion \
+  libjson-perl libgd-perl subversion \
   && ln -s /usr/bin/env /bin/env
 
 USER jovyan
+# Add nextflow to /home/jovyan/bin so that it's in PATH
+RUN mkdir /home/jovyan/bin
+WORKDIR /home/jovyan/bin
 
 RUN wget -qO- https://get.nextflow.io | bash \
 && pip install -r /install/requirements.txt
@@ -24,7 +27,7 @@ RUN wget -qO- https://get.nextflow.io | bash \
 # set perl environment variables
 ENV PERL_PATH=/app/data-fingerprints
 ENV PERL5LIB=$PERL_PATH:$PERL_PATH/lib/perl5:$PERL5LIB
-ENV PATH="$PERL_PATH:$PATH"
+ENV PATH="/home/jovyan/bin:$PERL_PATH:$PATH"
 
 # Commented out because the directory has been committed as data-fingeprints
 # Download only the Perl bin directory from gglusman/data-fingerprints to /home/jovyan
