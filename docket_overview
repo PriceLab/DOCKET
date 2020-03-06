@@ -16,22 +16,44 @@ my $fp_dir = "$docket/fingerprints";
 my $cmp_dir = "$docket/comparisons";
 my $viz_dir = "$docket/visualizations";
 
+# get summary details
 my $rows_hist = read_json("$data_dir/rows_hist.json.gz");
 my $cols_hist = read_json("$data_dir/cols_hist.json.gz");
+my $nrows = scalar keys %$rows_hist;
+my $ncols = scalar keys %$cols_hist;
 
+# get info on columns
+my $col_info = read_json("$data_dir/cols_types.json.gz");
+my($empty_cols, $num_cols);
+foreach (keys %$col_info) {
+	$col_info->{$_}{'values'}-- if $col_info->{$_}{'NULL'};
+	$empty_cols++ if $col_info->{$_}{'NULL'} == $nrows;
+	if ($col_info->{$_}{'NUM'} && !$col_info->{$_}{'STR'}) {
+		$num_cols++;
+	}
+}
+$empty_cols ||= 'zero';
+$num_cols ||= 'zero';
 
-
+# get info on correlations
+my($num_corr_headers, $num_corr) = read_table("$cmp_dir/num_assoc.gz");
+my($cat_corr_headers, $cat_corr) = read_table("$cmp_dir/cat_assoc.gz");
 
 
 print_header("docket overview");
 print_section("Overview", [
 	"Docket path: $docket",
-	join(" ", "Table size:", scalar keys %$rows_hist, "rows", "x", scalar keys %$cols_hist, "columns"),
+	join(" ", "Table size:", $nrows, "rows", "x", $ncols, "columns", "($empty_cols of which are empty, $num_cols are numerical)"),
 	]);
 
-my $col_info = read_json("$data_dir/cols_types.json.gz");
+
 print_section("Columns", [
-	[$col_info, 'table'],
+	[$col_info, 'table', undef, {'values' => 'distinct non-NULL values'}],
+	]);
+
+print_section("Associations", [
+	[$num_corr, 'table', $num_corr_headers, {}, 5, 20],
+	[$cat_corr, 'table', $cat_corr_headers, {}, -5, 20],
 	]);
 
 print_footer();
@@ -76,7 +98,7 @@ sub print_block {
 	if (ref($bl) eq 'ARRAY') {
 		my($what, $format) = @$bl;
 		if ($format eq 'table') {
-			print_table($what);
+			print_table(@$bl);
 		}
 	} elsif (ref($bl) eq 'HASH') {
 		
@@ -86,7 +108,7 @@ sub print_block {
 }
 
 sub print_table {
-	my($what) = @_;
+	my($what, $format, $headers, $replace, $sortkey, $show) = @_;
 	
 	if (ref($what) eq 'HASH') {
 		my @keys = sort keys %$what;
@@ -96,15 +118,67 @@ sub print_table {
 		}
 		my @cols = sort keys %cols;
 		print "<table border>\n";
-		print "<tr><th>", join("</th><th>", 'Column name', @cols), "</th></tr>\n";
+		print "<tr><th>", join("</th><th>", 'Column name', map {$replace->{$_} || $_} @cols), "</th></tr>\n";
 		foreach my $key (@keys) {
-			print "<tr><td><b>$key</b></td><td>";
+			print "<tr><td>$key</td><td>";
 			print join("</td><td>", map {$what->{$key}{$_} || " "} @cols);
+		}
+		print "</td></tr>\n";
+		print "</table>\n";
+	} elsif (ref($what) eq 'ARRAY') {
+		my @cols = @$headers;
+		print "<table border>\n";
+		print "<tr><th>", join("</th><th>", map {$replace->{$_} || $_} @cols), "</th></tr>\n";
+		if ($sortkey) {
+			my $reverse;
+			if ($sortkey<0) {
+				$reverse = 1;
+				$sortkey = -$sortkey-1;
+				my @sorted = sort {$b->[$sortkey] <=> $a->[$sortkey]} @$what;
+				$what = \@sorted;
+			} else {
+				$sortkey--;
+				my @sorted = sort {$a->[$sortkey] <=> $b->[$sortkey]} @$what;
+				$what = \@sorted;
+			}
+			
+		}
+		my $shown;
+		foreach my $line (@$what) {
+			print "<tr><td>";
+			print join("</td><td>", @$line);
+			$shown++;
+			last if $shown>=$show;
 		}
 		print "</td></tr>\n";
 		print "</table>\n";
 	}
 	
+}
+
+sub read_table {
+	my($file) = @_;
+	my(@headers, @table);
+	
+	if ($file =~ /\.gz$/) {
+		open F, "gunzip -c $file |";
+	} else {
+		open F, $file;
+	}
+	while (<F>) {
+		next if /^#/;
+		chomp;
+		@headers = split /\t/;
+		last;
+	}
+	while (<F>) {
+		chomp;
+		my(@v) = split /\t/;
+		push @table, \@v;
+	}
+	
+	close F;
+	return \@headers, \@table;
 }
 
 

@@ -41,7 +41,7 @@ if clustersfile:
         ids = cf.readline().decode('utf8').strip()
         ids = ids[1:]
         ### the following will fail if there aren't enough clusters
-        for i in range(int(clusters)-2):
+        for i in range(int(clusters)-1):
             throwaway = cf.readline()
         clust = cf.readline().decode('utf8').strip()
         clust = clust.split('\t')
