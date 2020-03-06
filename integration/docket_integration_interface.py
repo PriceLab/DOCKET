@@ -16,6 +16,7 @@ def excute_jupyterNotebook(default_filename) :
 	subprocess.call([
 		        'jupyter',
 		        'nbconvert',
+				'--ExecutePreprocessor.timeout=600',
 		        '--inplace',
 		        '--to',
 		        'html',
@@ -105,6 +106,37 @@ def main():
 			   		content = json.load(fp)
 
 				default_filename = User_output+"Integration_temp_GDSC_mut_drug_response.ipynb"
+				new_content = []
+				new_content.append('input_data = {')
+				for item in reformat_json(para1):
+					new_content.append(item)
+				new_content.append('}')
+
+				content['cells'][1]['source'] = new_content
+
+				new_content = []
+				new_content.append('input_data2 = {')
+				for item in reformat_json(para2):
+					new_content.append(item)
+				new_content.append('}')
+
+				content['cells'][2]['source'] = new_content
+
+				jupyter_content = content
+				with open(default_filename, 'w') as fp:
+					json.dump(content, fp, indent=2)
+				excute_jupyterNotebook(default_filename)
+
+				print("Finished! Please check the output file in " + default_filename)
+		elif sys.argv[2] == 'mut_expr':
+			para1 = load_json(sys.argv[3])
+			para2 = load_json(sys.argv[4])
+			print(para2)
+			if len(sys.argv) == 5:
+				with open(Script_dir + "Integration_temp_GDSC_mut_expression.ipynb") as fp:
+			   		content = json.load(fp)
+
+				default_filename = User_output+"Integration_temp_GDSC_mut_expression.ipynb"
 				new_content = []
 				new_content.append('input_data = {')
 				for item in reformat_json(para1):
