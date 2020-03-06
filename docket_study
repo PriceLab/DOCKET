@@ -266,7 +266,7 @@ process trim_col_fingerprints {
 	input: file cfp from colsallfp
 	output: file 'cols_fp.raw.gz' into colstrimfp
 	"""
-	$dbin/filterTable.pl $cfp 1 $params.minTriples | gzip -c > cols_fp.raw.gz
+	$dbin/filterTable.pl $cfp 1 $params.minTriples 0 id | gzip -c > cols_fp.raw.gz
 	"""
 }
 process PCA_col_fingerprints {

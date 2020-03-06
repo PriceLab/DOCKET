@@ -3,7 +3,7 @@ $|=1;
 use strict;
 
 #This script is used in the DOCKET pipeline to filter out fingerprints that have too few triples, by setting $column to 1 and specifying the minimal number of triples to accept.
-my($infile, $column, $minvalue) = @ARGV;
+my($infile, $column, $minvalue, $filterColumn, $valueToFilter) = @ARGV;
 
 if ($infile =~ /\.gz$/) {
 	open INF, "gunzip -c $infile |";
@@ -13,6 +13,7 @@ if ($infile =~ /\.gz$/) {
 
 while (<INF>) {
 	my(@v) = split /\t/, $_, $column+1;
+	next if $valueToFilter && $v[$filterColumn] eq $valueToFilter;
 	if ($v[$column] >= $minvalue) {
 		print;
 	}
