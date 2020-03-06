@@ -1,0 +1,5 @@
+{
+"Mutlist": ["KRAS"],
+"Exprlist": [],
+"Output":"../Output/LUAD_GDSC_mut_exp_pair.csv"
+}

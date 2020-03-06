@@ -1,0 +1,5 @@
+{
+"input_file_1": "../data/LUAD_GDSC_mut_matrix.csv",
+"input_file_2": "../data/LUAD_GDSC_expr_mat.csv",
+"output_file": "../Output/LUAD_GDSC_mut_expr_merge.csv"
+}

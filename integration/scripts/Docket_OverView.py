@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import matplotlib.pyplot as plt
+import pandas as pd
+import scipy
+import numpy as np
+import math
+from scipy import stats
+import statsmodels.stats.multitest as multi
+import scipy.stats as stats
+
 ###Giving the PCA file, select the principle components for visulize. 
 def pca_plot(File_PCA, pca_sele1, pca_sele2):
     import pandas as pd
@@ -16,6 +25,21 @@ def pca_plot(File_PCA, pca_sele1, pca_sele2):
     plt.figure(figsize = (4,4),dpi = 300)
     fig = px.scatter(pca, pca_sele1, pca_sele2, hover_data=['object'])
     fig.show()
+
+#### Measuring factor difference between two groups
+
+def cohen_dist(vec1, vec2):
+    M1 = np.mean(vec1)
+    N1 = len(vec1)
+    M2 = np.mean(vec2)
+    N2 = len(vec2)
+    SD_pooled = np.sqrt(
+                        (np.square(np.std(vec1)) * (N1 - 1) 
+                        + np.square(np.std(vec2)) * (N2 - 1)) 
+                        / (N1 + N2 -2)
+                       )
+    d = (M1 - M2) / SD_pooled
+    return(d)
 
 
 def feature_association_category(data_for_test, columns):

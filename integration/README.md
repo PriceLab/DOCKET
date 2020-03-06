@@ -69,3 +69,15 @@ Output/ : the output directory
 visualization: Label for which process will the integration process do
 config/Para_visulization.json: Parameter file
 
+## An example of integration of gene mutation and gene expression
+```bash
+python docket_integration_interface.py \                          
+    Output/  mut_expr \
+    config/Para1_integration_mut_expr.json config/Para2_integration_mut_expr.json
+```
+
+Parameters description:
+Output/ : the output directory
+mut_drugResponse: Label for which process will the integration process do
+config/Para1_integration_mut_expr.json: Parameter file
+cconfig/Para2_integration_mut_expr.json: Parameter file
