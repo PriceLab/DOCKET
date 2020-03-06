@@ -6,8 +6,8 @@ use JSON;
 use Scalar::Util qw(looks_like_number);
 
 my($docket, $sortCols, $sortRows) = @ARGV;
-my $ch = readJson("$docket/data/cols_hist.json.gz");
-my $rt = readJson("$docket/data/rows_types.json.gz");
+#my $ch = readJson("$docket/data/cols_hist.json.gz");
+#my $rt = readJson("$docket/data/rows_types.json.gz");
 my(@data, @type, @col_nulls, @row_nulls);
 
 open DATA, "gunzip -c $docket/data/original_data.gz |";
@@ -30,7 +30,7 @@ while (<DATA>) {
 	foreach my $i (0..$#headers) {
 		my $v = $v[$i];
 		my $t;
-		$v = $1 if $v =~ /^\"(.+)\"$/;
+		$v = $1 while $v =~ /^\"(.+)\"$/;
 		if (length($v)==0 || $v =~ /^(NA|NULL)$/i) {
 			$t = 'null';
 			$col_nulls[$i]++;
