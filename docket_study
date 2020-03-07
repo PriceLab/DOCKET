@@ -41,6 +41,23 @@ process ingest_file {
 
 
 
+/* SECTION: data set overview */
+process plot_dataset_overviews {
+	/* graphics depicting entire data set */
+	publishDir "$docket/visualizations", mode: 'copy'
+	input: file data from originaldata
+	output:
+	    file 'data_overview.png'
+	    file 'data_overview_nullsorted.png'
+	"""
+	$dbin/plotMatrixOverview.pl $docket data_overview
+	$dbin/plotMatrixOverview.pl $docket data_overview_nullsorted nulls nulls
+	"""
+}
+/* END SECTION: data set overview */
+
+
+
 /* SECTION: column histogram pipeline */
 process column_histograms {
 	/* column-wise histograms of observed values */

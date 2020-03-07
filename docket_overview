@@ -38,12 +38,14 @@ $num_cols ||= 'zero';
 # get info on correlations
 my($num_corr_headers, $num_corr) = read_table("$cmp_dir/num_assoc.gz");
 my($cat_corr_headers, $cat_corr) = read_table("$cmp_dir/cat_assoc.gz");
-
+my $overviews = [['<a href="data_overview.png"><img src="data_overview.png" style="max-width:500px"></a>',
+'<a href="data_overview_nullsorted.png"><img src="data_overview_nullsorted.png" style="max-width:500px"></a>']];
 
 print_header("docket overview");
 print_section("Overview", [
 	"Docket path: $docket",
 	join(" ", "Table size:", $nrows, "rows", "x", $ncols, "columns", "($empty_cols of which are empty, $num_cols are numerical)"),
+	[$overviews, 'table', ['original', 'null-sorted']],
 	]);
 
 

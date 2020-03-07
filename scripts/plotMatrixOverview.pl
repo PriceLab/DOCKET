@@ -5,10 +5,11 @@ use GD;
 use JSON;
 use Scalar::Util qw(looks_like_number);
 
-my($docket, $sortCols, $sortRows) = @ARGV;
+my($docket, $outfile, $sortCols, $sortRows) = @ARGV;
 #my $ch = readJson("$docket/data/cols_hist.json.gz");
 #my $rt = readJson("$docket/data/rows_types.json.gz");
 my(@data, @type, @col_nulls, @row_nulls);
+my $delim = "\t";
 
 open DATA, "gunzip -c $docket/data/original_data.gz |";
 while (<DATA>) {
@@ -16,16 +17,20 @@ while (<DATA>) {
 	last;
 }
 chomp;
-my @headers = split /\t/;
+my @headers = split /$delim/;
+if (scalar @headers<2) {
+	$delim = ',';
+	@headers = split /$delim/;
+}
 foreach my $i (0..$#headers) {
-	$headers[$i] = $1 if $headers[$i] =~ /^\"(.+)\"$/;
+	$headers[$i] = $1 while $headers[$i] =~ /^\"(.+)\"$/;
 }
 my $j;
 while (<DATA>) {
 	next if /^#/;
 	chomp;
 	next unless $_;
-	my @v = split /\t/;
+	my @v = split /$delim/;
 	push @data, \@v;
 	foreach my $i (0..$#headers) {
 		my $v = $v[$i];
@@ -89,7 +94,7 @@ foreach my $j (0..$#sortedRows) {
 	}
 }
 
-open (PNG,">$docket/visualizations/data_overview.png") || warn "Couldn't write png file: $!\n";
+open (PNG,">$outfile.png") || warn "Couldn't write png file: $!\n";
 print PNG $im->png;
 close PNG;
 
