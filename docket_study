@@ -16,6 +16,7 @@ params.comment = '#'
 
 /* interpret parameters */
 infile = file(params.infile)
+format = params.format
 docket = file(params.docket)
 L = params.L
 histL = params.histL
