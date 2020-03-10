@@ -38,9 +38,9 @@ print COLS to_json($info->{'colwise'}, {pretty=>1});
 close COLS;
 
 open CLEAN, ">cleaned_data.txt";
-my @headers = @{$info->{'headers'}[0]};
+my @headers = @{$info->{'colnames'}};
 print CLEAN join("\t", @headers), "\n";
-foreach my $row (sort keys %{$info->{'rowwise'}}) {
+foreach my $row (@{$info->{'rownames'}}) {
 	my $ri = $info->{'rowwise'}{$row};
 	print CLEAN join("\t", map {$ri->{$headers[$_]} || 'NA'} (0..$#headers)), "\n";
 }
@@ -51,7 +51,7 @@ close CLEAN;
 ########
 sub read_tabular {
 	my($infile, $headerLines, $delimiter, $idcol, $skipcols) = @_;
-	my(@headers, @names, @colHist, $rows, %colwise, %rowwise, $id);
+	my(@headers, @colnames, @rownames, @colHist, $rows, %colwise, %rowwise, $id);
 	$delimiter ||= "\t";
 
 	if ($infile =~ /\.gz$/) {
@@ -79,34 +79,37 @@ sub read_tabular {
 		s/\r//g;
 		my(@v) = split $delimiter;
 
-		unless (@names) {
+		unless (@colnames) {
 			if (defined $headers[0]) {
-				@names = @{$headers[0]};
-				unshift @names, "id" if scalar @v == 1+scalar @names;
-				### if scalar @v != scalar @names, there will be trouble
+				@colnames = @{$headers[0]};
+				unshift @colnames, "id" if scalar @v == 1+scalar @colnames;
+				### if scalar @v != scalar @colnames, there will be trouble
 			} else {
 				# make up names like col_0, col_1...
-				@names = map {"col_$_"} (0..$#v);
+				@colnames = map {"col_$_"} (0..$#v);
 			}
 		}
 		
 		$id = $v[$idcol];
 		next if $skipDuplicates && defined $rowwise{$id};
+		push @rownames, $id;
 		
 		$colHist[scalar @v]++;
 		$rows++;
-		foreach my $col ($skipcols..$#names) {
+		foreach my $col ($skipcols..$#colnames) {
 			my $v = $v[$col];
-			$colwise{$names[$col]}{$id} = $rowwise{$id}{$names[$col]} = $v;
+			$colwise{$colnames[$col]}{$id} = $rowwise{$id}{$colnames[$col]} = $v;
 		}
 	}
 	close INF;
 	return {
-		'headers' => \@headers,
-		'colhist' => \@colHist,
-		'rows'    => $rows,
-		'colwise' => \%colwise,
-		'rowwise' => \%rowwise
+		'headers'  => \@headers,
+		'colnames' => \@colnames,
+		'rownames' => \@rownames,
+		'colhist'  => \@colHist,
+		'rows'     => $rows,
+		'colwise'  => \%colwise,
+		'rowwise'  => \%rowwise
 	};
 }
 
