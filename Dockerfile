@@ -27,7 +27,7 @@ RUN wget -qO- https://get.nextflow.io | bash \
 # set perl environment variables
 ENV PERL_PATH=/app/data-fingerprints
 ENV PERL5LIB=$PERL_PATH:$PERL_PATH/lib/perl5:$PERL5LIB
-ENV PATH="/home/jovyan/bin:$PERL_PATH:$PATH"
+ENV PATH="/app:/home/jovyan/bin:$PERL_PATH:$PATH"
 
 # Commented out because the directory has been committed as data-fingeprints
 # Download only the Perl bin directory from gglusman/data-fingerprints to /home/jovyan
