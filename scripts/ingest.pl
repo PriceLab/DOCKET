@@ -14,7 +14,6 @@ if ($infile =~ /\.gz$/) {
 	`gzip -c $infile > original_data.gz`;
 }
 
-$file_format ||= determine_format($infile);
 my $info;
 if ($file_format eq 'xml') {
 	$info = read_xml($infile);
@@ -26,7 +25,7 @@ if ($file_format eq 'xml') {
 	$info = read_tabular($infile, 1, ' ', 0, 1); # 1 header line, space-delimited, id in column 0, skip 1 column
 } elsif ($file_format eq 'lol') { #list of lists
 	$info = read_lol($infile, 0, 0, 0, 2); # 0 header lines, default delimiter, id in column 0, skip 2 columns
-} elsif ($file_format eq 'xyz') {
+} elsif ($file_format eq 'xyz') { #triples
 	$info = read_xyz($infile, 1, ','); # 1 header line, comma-delimited
 }
 
@@ -38,19 +37,18 @@ open COLS, ">cols_data.json";
 print COLS to_json($info->{'colwise'}, {pretty=>1});
 close COLS;
 
-`gzip -f rows_data.json cols_data.json`;
+open CLEAN, ">cleaned_data.txt";
+my @headers = @{$info->{'headers'}[0]};
+print CLEAN join("\t", @headers), "\n";
+foreach my $row (sort keys %{$info->{'rowwise'}}) {
+	my $ri = $info->{'rowwise'}{$row};
+	print CLEAN join("\t", map {$ri->{$headers[$_]} || 'NA'} (0..$#headers)), "\n";
+}
+close CLEAN;
+
+`gzip -f rows_data.json cols_data.json cleaned_data.txt`;
 
 ########
-sub determine_format { ###unfinished
-	my($file) = @_;
-
-	my $test = `file $file`;
-	return 'xml' if $test =~ /: XML/;
-
-	return 'table';
-}
-
-
 sub read_tabular {
 	my($infile, $headerLines, $delimiter, $idcol, $skipcols) = @_;
 	my(@headers, @names, @colHist, $rows, %colwise, %rowwise, $id);

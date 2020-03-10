@@ -42,7 +42,7 @@ print("#numerical", N, sep="\t")
 print('variableA', 'variableB', 'N', 'rho', 'pval', 'adjpval', sep="\t")
 
 if N>1:
-    tests = N*(N-1)/2
+    tests = N*(N-1)/2  ### this is overpenalizing since we don't to ALL those tests
     
     if args.comment == '0':
         data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row), low_memory=False)
@@ -64,6 +64,6 @@ if N>1:
                     temp_df = temp_df.replace(0,np.nan)
                     temp_df = temp_df.dropna()
                     rho, pval = stats.spearmanr(temp_df['A'].values, temp_df['B'].values)
-                    if pval <= 0.01:
+                    if pval <= 0.05:
                         print(colA, colB, len(temp_df['A']), format(rho, '.3f'), format(pval, '.2e'), format(pval*tests, '.2e'), sep="\t")
                         #print(temp_df)
