@@ -42,7 +42,7 @@ my @headers = @{$info->{'colnames'}};
 print CLEAN join("\t", @headers), "\n";
 foreach my $row (@{$info->{'rownames'}}) {
 	my $ri = $info->{'rowwise'}{$row};
-	print CLEAN join("\t", map {$ri->{$headers[$_]} || 'NA'} (0..$#headers)), "\n";
+	print CLEAN join("\t", map {$ri->{$headers[$_]} // 'NA'} (0..$#headers)), "\n";
 }
 close CLEAN;
 
@@ -98,6 +98,7 @@ sub read_tabular {
 		$rows++;
 		foreach my $col ($skipcols..$#colnames) {
 			my $v = $v[$col];
+			next unless $v || length($v);
 			$colwise{$colnames[$col]}{$id} = $rowwise{$id}{$colnames[$col]} = $v;
 		}
 	}
