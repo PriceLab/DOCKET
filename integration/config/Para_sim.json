@@ -1,8 +1,8 @@
 {
-    "File1":"../data/Mut_site_LUAD_GDSC.csv",
-    "File2":"../data/Mut_site_LUAD_TCGA.csv",
-    "File_out": "../Output/Mut_site_LUAD_TCGA.csv",
-    "Disease_type":"LUAD",
+    "File1":"Mut_site_GDSC.csv",
+    "File2":"Mut_site_TCGA.csv",
+    "File_out": "Mut_sim.csv",
+    "Disease_type":"BRCA",
     "Sample_label":"sample_barcode_tumor",
     "Gene_label":"Hugo_Symbol"
 }

@@ -1,6 +1,6 @@
 {"Feature1": "F1",
 "Feature2": "Drug_Targeted_process_or_pathway",
 "Threshold_p":"0.05",
-"output_sen":"../Output/LUAD_GDSC_mut_drug_pair_annotated_enriched_sen.csv",
-"output_res":"../Output/LUAD_GDSC_mut_drug_pair_annotated_enriched_res.csv"
+"output_sen":"mut_drug_pair_annotated_enriched_sen.csv",
+"output_res":"mut_drug_pair_annotated_enriched_res.csv"
 }

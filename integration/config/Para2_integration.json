@@ -1,5 +1,5 @@
 {
-"Genelist": ["TP53","KRAS","PDHA2","STK11","BRAF","SGIP1","EGFR"],
+"Genelist": ["TP53","KRAS","BRAF","EGFR"],
 "Druglist":[], 
-"Output": "../Output/LUAD_GDSC_mut_drug_pair.csv"
+"Output": "mut_drug_pair.csv"
 }
