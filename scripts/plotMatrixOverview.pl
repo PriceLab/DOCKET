@@ -11,7 +11,7 @@ my($docket, $outfile, $sortCols, $sortRows) = @ARGV;
 my(@data, @type, @col_nulls, @row_nulls);
 my $delim = "\t";
 
-open DATA, "gunzip -c $docket/data/original_data.gz |";
+open DATA, "gunzip -c $docket/data/cleaned_data.txt.gz |";
 while (<DATA>) {
 	next if /^#/;
 	last;

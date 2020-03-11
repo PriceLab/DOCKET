@@ -46,7 +46,7 @@ process ingest_file {
 process plot_dataset_overviews {
 	/* graphics depicting entire data set */
 	publishDir "$docket/visualizations", mode: 'copy'
-	input: file data from originaldata
+	input: file data from cleandata
 	output:
 	    file 'data_overview.png'
 	    file 'data_overview_nullsorted.png'
