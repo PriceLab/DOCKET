@@ -1,23 +1,13 @@
 #!/bin/env python3
 
 import argparse
-import json
-import gzip
+import common.file_io as io
 import pandas as pd
 import numpy as np
 from collections import Counter
 import math
 pd.set_option('display.max_rows', None)
 from scipy import stats as ss
-
-def load_json(file):
-    if file.split('.')[-1] == 'gz':
-        with gzip.GzipFile(file, 'r') as f:
-            data = json.loads(f.read().decode('utf-8'))
-    else:
-        with open(file, 'r') as f:
-            data = json.loads(f.read())
-    return data
 
 def conditional_entropy(x,y):
     # entropy of x given y
@@ -52,7 +42,7 @@ parser.add_argument('--index_col', help='Index of column to use as row labels', 
 parser.add_argument('--header_row', help='Index of row to use as column labels', default=0)
 args=parser.parse_args()
 
-types = load_json(args.types_file)
+types = io.load_json(args.types_file)
 cols = []
 # select categorical columns with at least two but no more than ten different values
 # at least ten rows must have a non-null value
