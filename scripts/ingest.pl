@@ -115,7 +115,7 @@ sub read_tabular {
 
 sub read_lol { # list of lists
 	my($infile, $headerLines, $delimiter, $idcol, $skipcols) = @_;
-	my(@headers, @colHist, $rows, %colwise, %rowwise, $id);
+	my(@headers, @colnames, @rownames, @colHist, $rows, %colwise, %rowwise, $id);
 	$delimiter ||= "\t";
 
 	if ($infile =~ /\.gz$/) {
@@ -141,24 +141,29 @@ sub read_lol { # list of lists
 		$colHist[scalar @v]++;
 		$rows++;
 		$id = $v[$idcol];
+		push @rownames, $id;
 		foreach my $col ($skipcols..$#v) {
 			my $v = $v[$col];
 			$colwise{$v}{$id} = $rowwise{$id}{$v} = 1;
 		}
 	}
 	close INF;
+	my @colnames = sort keys %colwise;
 	return {
-		'headers' => \@headers,
-		'colhist' => \@colHist,
-		'rows'    => $rows,
-		'colwise' => \%colwise,
-		'rowwise' => \%rowwise
+		'headers'  => \@headers,
+		'colnames' => \@colnames,
+		'rownames' => \@rownames,
+		'colhist'  => \@colHist,
+		'rows'     => $rows,
+		'colwise'  => \%colwise,
+		'rowwise'  => \%rowwise
 	};
 }
 
 sub read_xyz { # row-col-value triples
 	my($infile, $headerLines, $delimiter) = @_;
-	my(@headers, @colHist, $rows, %colwise, %rowwise, $id, $attr, $v);
+	my(@headers, @colnames, @rownames, @colHist, $rows, %colwise, %rowwise, $id, $attr, $v);
+	my(%seenid, %seenattr);
 	$delimiter ||= "\t";
 
 	if ($infile =~ /\.gz$/) {
@@ -184,15 +189,21 @@ sub read_xyz { # row-col-value triples
 		$colHist[scalar @v]++;
 		$rows++;
 		($id, $attr, $v) = @v;
+		push @rownames, $id unless $seenid{$id};
+		$seenid{$id}++;
+		push @colnames, $attr unless $seenattr{$id};
+		$seenattr{$attr}++;
 		$colwise{$attr}{$id} = $rowwise{$id}{$attr} = $v;
 	}
 	close INF;
 	return {
-		'headers' => \@headers,
-		'colhist' => \@colHist,
-		'rows'    => $rows,
-		'colwise' => \%colwise,
-		'rowwise' => \%rowwise
+		'headers'  => \@headers,
+		'colnames' => \@colnames,
+		'rownames' => \@rownames,
+		'colhist'  => \@colHist,
+		'rows'     => $rows,
+		'colwise'  => \%colwise,
+		'rowwise'  => \%rowwise
 	};
 }
 
@@ -204,7 +215,10 @@ sub read_xml { ###unfinished
 	$content = $content->{'GENESET'}; ### specific
 	print join("\t", %{$content->{'GENESET'}[0]}), "\n";
 
+	#####
 	exit;
+	####
+	
 	while (<INF>) {
 		chomp;
 		my(@v) = split;
