@@ -1,5 +1,5 @@
 {
-"input_file":"../Output/LUAD_GDSC_mut_drug_pair_annotated.csv",
+"input_file":"mut_drug_pair_annotated.csv",
 "columns_forFilter":"p",
 "threshold":"0.05",
 "F1":["F1"],

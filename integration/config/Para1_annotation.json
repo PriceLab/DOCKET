@@ -1,6 +1,6 @@
 {
-"Association_file": "../Output/LUAD_GDSC_mut_drug_pair.csv",
-"Annotation_file": "../data/GDSC_Drug_anno.csv",
+"Association_file": "mut_drug_pair.csv",
+"Annotation_file": "GDSC_Drug_anno.csv",
 "list_forAnnotate1":["Drug_identifier","Drug_Name"],
 "list_forAnnotate2":["Drug_identifier","Drug_Putative_Target"],
 "list_forAnnotate3":["Drug_identifier","Drug_Targeted_process_or_pathway"],
@@ -9,5 +9,5 @@
 "obj2":"F2",
 "SizeEffect":"SE",
 "pvalue":"-logP",
-"output_file":"../Output/LUAD_GDSC_mut_drug_pair_annotated.csv"
+"output_file":"mut_drug_pair_annotated.csv"
 }

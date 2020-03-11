@@ -1,5 +1,5 @@
 {
-"Mutlist": ["KRAS"],
+"Mutlist": ["TP53","KRAS","BRAF","EGFR"],
 "Exprlist": [],
-"Output":"../Output/LUAD_GDSC_mut_exp_pair.csv"
+"Output":"GDSC_mut_exp_pair.csv"
 }
