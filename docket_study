@@ -379,9 +379,9 @@ process compute_numeric_associations {
 	input:
             file data from cleandata
             file ctypes from colstypes
-	output: file 'num_assoc.gz'
+	output: file 'num_assoc.json.gz'
 	"""
-	$dbin/numerical_associations.py --infile $data --types_file $ctypes | gzip -c > num_assoc.gz
+	$dbin/numerical_associations.py --infile $data --types_file $ctypes
 	"""
 }
 process compute_categorical_associations {

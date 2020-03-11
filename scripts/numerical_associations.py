@@ -25,13 +25,12 @@ for i in types:
         cols.append(i)
 
 N = len(cols)
-
-print("#numerical", N, sep="\t")
-print('variableA', 'variableB', 'N', 'rho', 'pval', 'adjpval', sep="\t")
+pairs = []
+#print("#numerical", N, sep="\t")
+#print('variableA', 'variableB', 'N', 'rho', 'pval', sep="\t")
 tests_done = 0
 
 if N>1:
-    tests = N*(N-1)/2  ### this is overpenalizing since we don't to ALL those tests
     data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row), comment=None, low_memory=False)
 
     for i in range(len(cols)):
@@ -50,7 +49,19 @@ if N>1:
                     rho, pval = stats.spearmanr(temp_df['A'].values, temp_df['B'].values)
                     tests_done = tests_done + 1
                     if pval <= 0.05:
-                        print(colA, colB, len(temp_df['A']), format(rho, '.3f'), format(pval, '.2e'), format(pval*tests, '.2e'), sep="\t")
-                        #print(temp_df)
+                        #print(colA, colB, len(temp_df['A']), format(rho, '.3f'), format(pval, '.2e') sep="\t")
+                        blob = {'A': colA, 'B': colB, 'N': len(temp_df['A']), 'rho': format(rho, '.3f'), 'pval': pval}
+                        pairs.append(blob)
 
-print("#tests_done", tests_done)
+#print("#tests_done", tests_done)
+
+significant = []
+for pair in pairs:
+    corrected = pair['pval']*tests_done
+    if corrected <= 0.05:
+        pair['pval'] = format(corrected, '.2e')
+        significant.append(pair)
+
+result = {'relationship': 'is_correlated_to', 'test_type': 'Spearman correlation', 'correction': 'Bonferroni', 'numerical_columns': N, 'tests_done': tests_done, 'tests_passed': len(significant), 'tests': significant}
+io.write_json(result, 'num_assoc.json.gz')
+
