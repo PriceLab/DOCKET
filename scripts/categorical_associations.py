@@ -48,9 +48,8 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--infile', help='File to load')
 parser.add_argument('--sep', help='Delimiter to use', default='\t')
 parser.add_argument('--types_file', help='File with type counts')
-parser.add_argument('--index_col', help='Index of column to use as row labels', default=None)
-parser.add_argument('--header_row', help='Index of row to use as column labels', default=None)
-parser.add_argument('--comment', help='Character to treat as comment signal', default='#')
+parser.add_argument('--index_col', help='Index of column to use as row labels', default=0)
+parser.add_argument('--header_row', help='Index of row to use as column labels', default=0)
 args=parser.parse_args()
 
 types = load_json(args.types_file)
@@ -72,10 +71,7 @@ print("#categorical",len(cols),sep="\t")
 print('variableA', 'variableB', 'N', 'Theil_B_A', 'Theil_A_B', sep="\t")
 
 if cols:
-    if args.comment == '0':
-        data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row), low_memory=False)
-    else:
-        data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row), comment=args.comment, low_memory=False)
+    data = pd.read_csv(args.infile, sep=args.sep, usecols=cols, index_col=int(args.index_col), header=int(args.header_row), comment=None, low_memory=False)
 
 
     for i in range(len(cols)):
