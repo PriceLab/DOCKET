@@ -375,7 +375,7 @@ process plot_PCA_col_fingerprints {
 }
 process compute_numeric_associations {
 	/* compute pairwise Spearman correlations between numerical columns */
-	publishDir "$docket/comparisons", mode: 'copy'
+	publishDir "$docket/knowledgegraphs", mode: 'copy'
 	input:
             file data from cleandata
             file ctypes from colstypes
