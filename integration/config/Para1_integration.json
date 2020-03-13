@@ -1,5 +1,5 @@
 {
-"input_file_1": "Mut_GDSC_matirx.csv",
-"input_file_2": "Drug_GDSC_matirx.csv",
+"input_file_1": "Mut_GDSC_matrix.csv",
+"input_file_2": "Drug_GDSC_matrix.csv",
 "output_file": "GDSC_mut_drug_merge.csv"
 }
