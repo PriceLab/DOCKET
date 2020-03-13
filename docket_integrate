@@ -2,13 +2,13 @@
 scripts = "$baseDir/scripts"
 
 /* Similarity comparison defaults */
-params.cell_line_file = "$baseDir/data/Mut_site_LUAD_GDSC.csv"
-params.tissue_file = "$baseDir/data/Mut_site_LUAD_TCGA.csv"
+params.cell_line_file = "$baseDir/data/Mut_site_GDSC.csv"
+params.tissue_file = "$baseDir/data/Mut_site_TCGA.csv"
 params.similarity_config = "$baseDir/test/similarity_compare.config"
 
 /* Mutation drug response analysis defaults */
-params.mut_matrix_file = "$baseDir/data/LUAD_GDSC_mut_matrix.csv"
-params.drug_response_file = "$baseDir/data/LUAD_GDSC_drugResponse_matrix.csv"
+params.mut_matrix_file = "$baseDir/data/GDSC_mut_matrix.csv"
+params.drug_response_file = "$baseDir/data/GDSC_drugResponse_matrix.csv"
 params.drug_response_config = "$baseDir/test/drug_response.config"
 
 /* Annotation and enrichment analysis defaults */
