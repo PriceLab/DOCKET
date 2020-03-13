@@ -1,13 +1,13 @@
 #!/bin/env perl
 $|=1;
 use strict;
-#use JSON;
-#my $lphbin = "/users/gglusman/proj/DOCKET/data-fingerprints";
-my $cutoff = 0.9;
+use JSON;
 my(@files) = @ARGV;
+my $kg = "knowledgegraphs";
 
 # Collect dockets to be compared
 my @dockets;
+my %graphFiles;
 foreach my $file (@files) {
 	if ($file =~ /^@/) {
 		open F, $file;
@@ -16,6 +16,9 @@ foreach my $file (@files) {
 			my($d) = split /\t/;
 			if (looks_like_a_docket($d)) {
 				push @dockets, $d;
+				foreach (fulldirlist("$d/$kg")) {
+					$graphFiles{$1}{$d}++ if /(.+)\.json(\.gz)?$/;
+				}
 			} else {
 				print "#doesn't look like a docket: $d\n";
 			}
@@ -24,6 +27,9 @@ foreach my $file (@files) {
 	} else {
 		if (looks_like_a_docket($file)) {
 			push @dockets, $file;
+			foreach (fulldirlist("$file/$kg")) {
+				$graphFiles{$1}{$file}++ if /(.+)\.json(\.gz)?$/;
+			}
 		} else {
 			print "#doesn't look like a docket: $file\n";
 		}
@@ -32,7 +38,42 @@ foreach my $file (@files) {
 die "Not enough dockets to compare\n" unless scalar @dockets>1;
 @dockets = sort @dockets;
 #print scalar @dockets, " dockets to compare\n";
+#print join("\t", keys %graphFiles), "\n";
 
+foreach my $graph (sort keys %graphFiles) {
+	my @docketsWithGraph = sort keys %{$graphFiles{$graph}};
+	next unless scalar @docketsWithGraph>1;
+	my %info;
+	my %stat;
+	foreach my $d (@docketsWithGraph) {
+		my $json = read_json("$d/$kg/$graph.json.gz");
+		foreach my $key (keys %$json) {
+			if ($key eq 'tests') {
+				# ingest all test results
+				foreach my $blob (@{$json->{$key}}) {
+					my $pair = join("\t", $blob->{'A'}, $blob->{'B'});
+					foreach my $stat (keys %$blob) {
+						next if $stat eq 'A' || $stat eq 'B';
+						$stat{$pair}{$stat}{$d} = $blob->{$stat};
+					}
+				}
+			} else {
+				$info{$key}{$json->{$key}}++;
+			}
+		}
+	}
+	foreach my $key (sort keys %info) {
+		print join("\t", $graph, $key, %{$info{$key}}), "\n";
+	}
+	foreach my $pair (sort keys %stat) {
+		foreach my $stat (sort keys %{$stat{$pair}}) {
+			next if scalar keys %{$stat{$pair}{$stat}}<2;
+			print join("\t", $stat, map({$stat{$pair}{$stat}{$_} // 'NA'} @docketsWithGraph), $pair), "\n";
+		}
+	}
+}
+
+exit;
 # Step 1: compare num_assoc output
 my(%n, %rho, %pval);
 foreach my $i (0..$#dockets) {
@@ -104,3 +145,12 @@ sub avgstd {
 	my $std = sqrt($devsqsum/($n-1));
 	return $avg, $std;
 }
+
+sub fulldirlist {
+	my($dir) = @_;
+	opendir (DIR, $dir);
+	my @files = grep /^[^.]/, readdir DIR;
+	closedir DIR;
+	return @files;
+}
+

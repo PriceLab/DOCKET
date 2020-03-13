@@ -20,14 +20,23 @@ my $viz_dir = "$docket/visualizations";
 my $rows_hist = read_json("$data_dir/rows_hist.json.gz");
 my $cols_hist = read_json("$data_dir/cols_hist.json.gz");
 my $nrows = scalar keys %$rows_hist;
-my $ncols = scalar keys %$cols_hist;
 
 # get info on columns
+open CLDATA, "gunzip -c $data_dir/cleaned_data.txt.gz |";
+$_ = <CLDATA>;
+close CLDATA;
+chomp;
+my @columns = split /\t/;
+shift @columns;
+my $ncols = scalar @columns;
+
 my $col_info = read_json("$data_dir/cols_types.json.gz");
-my($empty_cols, $num_cols);
-foreach (keys %$col_info) {
+my $num_cols;
+my $empty_cols = $ncols - scalar keys %$cols_hist;
+foreach (keys %$cols_hist) {
 	$col_info->{$_}{'values'}-- if $col_info->{$_}{'NULL'};
-	$empty_cols++ if $col_info->{$_}{'NULL'} == $nrows;
+	$empty_cols++ if !defined $col_info->{$_} || $col_info->{$_}{'NULL'} == $nrows || $col_info->{$_}{'NUM'}+$col_info->{$_}{'STR'}==0;
+	#print "empty column $_\n" if !defined $col_info->{$_} || $col_info->{$_}{'NULL'} == $nrows || $col_info->{$_}{'NUM'}+$col_info->{$_}{'STR'}==0;
 	if ($col_info->{$_}{'NUM'} && !$col_info->{$_}{'STR'}) {
 		$num_cols++;
 	}
