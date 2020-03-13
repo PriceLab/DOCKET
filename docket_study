@@ -375,13 +375,15 @@ process plot_PCA_col_fingerprints {
 }
 process compute_numeric_associations {
 	/* compute pairwise Spearman correlations between numerical columns */
-	publishDir "$docket/knowledgegraphs", mode: 'copy'
+	publishDir "$docket/knowledgegraphs", pattern: "*.json.gz", mode: 'copy'
+	publishDir "$docket/comparisons", pattern: "*assoc.gz", mode: 'copy'
 	input:
             file data from cleandata
             file ctypes from colstypes
 	output: file 'num_assoc.json.gz'
+	output: file 'num_assoc.gz'
 	"""
-	$dbin/numerical_associations.py --infile $data --types_file $ctypes
+	$dbin/numerical_associations.py --infile $data --types_file $ctypes | gzip -c > num_assoc.gz
 	"""
 }
 process compute_categorical_associations {

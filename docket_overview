@@ -51,7 +51,7 @@ my $overviews = [['<a href="data_overview.png"><img src="data_overview.png" styl
 '<a href="data_overview_nullsorted.png"><img src="data_overview_nullsorted.png" style="max-width:500px"></a>']];
 
 print_header("docket overview");
-print_section("Overview", [
+print_section("DOCKET Overview", [
 	"Docket path: $docket",
 	join(" ", "Table size:", $nrows, "rows", "x", $ncols, "columns", "($empty_cols of which are empty, $num_cols are numerical)"),
 	[$overviews, 'table', ['original', 'null-sorted']],
@@ -62,8 +62,11 @@ print_section("Columns", [
 	[$col_info, 'table', undef, {'values' => 'distinct non-NULL values'}],
 	]);
 
-print_section("Associations", [
+print_section("Numerical associations", [
 	[$num_corr, 'table', $num_corr_headers, {}, 5, 20],
+	]);
+
+print_section("Categorical associations", [
 	[$cat_corr, 'table', $cat_corr_headers, {}, -5, 20],
 	]);
 
@@ -84,8 +87,6 @@ sub print_header {
 }
 
 sub print_footer {
-	#my() = @_;
-	
 	print "</body>\n</html>\n";
 }
 

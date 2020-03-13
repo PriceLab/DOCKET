@@ -26,8 +26,6 @@ for i in types:
 
 N = len(cols)
 pairs = []
-#print("#numerical", N, sep="\t")
-#print('variableA', 'variableB', 'N', 'rho', 'pval', sep="\t")
 tests_done = 0
 
 if N>1:
@@ -49,11 +47,12 @@ if N>1:
                     rho, pval = stats.spearmanr(temp_df['A'].values, temp_df['B'].values)
                     tests_done = tests_done + 1
                     if pval <= 0.05:
-                        #print(colA, colB, len(temp_df['A']), format(rho, '.3f'), format(pval, '.2e') sep="\t")
                         blob = {'A': colA, 'B': colB, 'N': len(temp_df['A']), 'rho': format(rho, '.3f'), 'pval': pval}
                         pairs.append(blob)
 
-#print("#tests_done", tests_done)
+print("#numerical", N, sep="\t")
+print("#tests_done", tests_done, sep="\t")
+print('variableA', 'variableB', 'N', 'rho', 'pval', sep="\t")
 
 significant = []
 for pair in pairs:
@@ -61,6 +60,7 @@ for pair in pairs:
     if corrected <= 0.05:
         pair['pval'] = format(corrected, '.2e')
         significant.append(pair)
+        print(pair['A'], pair['B'], pair['N'], pair['rho'], pair['pval'], sep="\t")
 
 result = {'relationship': 'is_correlated_to', 'test_type': 'Spearman correlation', 'correction': 'Bonferroni', 'numerical_columns': N, 'tests_done': tests_done, 'tests_passed': len(significant), 'tests': significant}
 io.write_json(result, 'num_assoc.json.gz')
