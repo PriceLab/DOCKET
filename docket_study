@@ -33,6 +33,7 @@ process ingest_file {
 	    /* file 'original_file' */
 		file 'cols_data.json.gz' into colsdata
 		file 'rows_data.json.gz' into rowsdata
+		file 'cleaned_data.txt.gz' into cleandata
 	"""
 	ln -s $params.infile original_file
 	${dbin}/ingest.pl $infile $params.format $params.skipDuplicates
@@ -46,7 +47,7 @@ process ingest_file {
 process plot_dataset_overviews {
 	/* graphics depicting entire data set */
 	publishDir "$docket/visualizations", mode: 'copy'
-	input: file data from originaldata
+	input: file data from cleandata
 	output:
 	    file 'data_overview.png'
 	    file 'data_overview_nullsorted.png'
@@ -375,20 +376,26 @@ process plot_PCA_col_fingerprints {
 }
 process compute_numeric_associations {
 	/* compute pairwise Spearman correlations between numerical columns */
-	publishDir "$docket/comparisons", mode: 'copy'
-	input: file ctypes from colstypes
+	publishDir "$docket/knowledgegraphs", pattern: "*.json.gz", mode: 'copy'
+	publishDir "$docket/comparisons", pattern: "*assoc.gz", mode: 'copy'
+	input:
+            file data from cleandata
+            file ctypes from colstypes
+	output: file 'num_assoc.json.gz'
 	output: file 'num_assoc.gz'
 	"""
-	$dbin/numerical_associations.py --infile $params.infile --types_file $ctypes --header_row 0 --index_col 0 --comment '$params.comment' | gzip -c > num_assoc.gz
+	$dbin/numerical_associations.py --infile $data --types_file $ctypes | gzip -c > num_assoc.gz
 	"""
 }
 process compute_categorical_associations {
 	/* compute pairwise Cramer V and Theil's U between categorical columns */
 	publishDir "$docket/comparisons", mode: 'copy'
-	input: file ctypes from colstypes
+	input:
+            file data from cleandata
+            file ctypes from colstypes
 	output: file 'cat_assoc.gz'
 	"""
-	$dbin/categorical_associations.py --infile $params.infile --types_file $ctypes --header_row 0 --index_col 0 --comment '$params.comment' | gzip -c > cat_assoc.gz
+	$dbin/categorical_associations.py --infile $data --types_file $ctypes | gzip -c > cat_assoc.gz
 	"""
 }
 

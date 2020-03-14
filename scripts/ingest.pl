@@ -14,7 +14,6 @@ if ($infile =~ /\.gz$/) {
 	`gzip -c $infile > original_data.gz`;
 }
 
-$file_format ||= determine_format($infile);
 my $info;
 if ($file_format eq 'xml') {
 	$info = read_xml($infile);
@@ -26,7 +25,7 @@ if ($file_format eq 'xml') {
 	$info = read_tabular($infile, 1, ' ', 0, 1); # 1 header line, space-delimited, id in column 0, skip 1 column
 } elsif ($file_format eq 'lol') { #list of lists
 	$info = read_lol($infile, 0, 0, 0, 2); # 0 header lines, default delimiter, id in column 0, skip 2 columns
-} elsif ($file_format eq 'xyz') {
+} elsif ($file_format eq 'xyz') { #triples
 	$info = read_xyz($infile, 1, ','); # 1 header line, comma-delimited
 }
 
@@ -38,22 +37,21 @@ open COLS, ">cols_data.json";
 print COLS to_json($info->{'colwise'}, {pretty=>1});
 close COLS;
 
-`gzip -f rows_data.json cols_data.json`;
+open CLEAN, ">cleaned_data.txt";
+my @headers = @{$info->{'colnames'}};
+print CLEAN join("\t", @headers), "\n";
+foreach my $row (@{$info->{'rownames'}}) {
+	my $ri = $info->{'rowwise'}{$row};
+	print CLEAN join("\t", map {$ri->{$headers[$_]} // 'NA'} (0..$#headers)), "\n";
+}
+close CLEAN;
+
+`gzip -f rows_data.json cols_data.json cleaned_data.txt`;
 
 ########
-sub determine_format { ###unfinished
-	my($file) = @_;
-
-	my $test = `file $file`;
-	return 'xml' if $test =~ /: XML/;
-
-	return 'table';
-}
-
-
 sub read_tabular {
 	my($infile, $headerLines, $delimiter, $idcol, $skipcols) = @_;
-	my(@headers, @names, @colHist, $rows, %colwise, %rowwise, $id);
+	my(@headers, @colnames, @rownames, @colHist, $rows, %colwise, %rowwise, $id);
 	$delimiter ||= "\t";
 
 	if ($infile =~ /\.gz$/) {
@@ -81,40 +79,44 @@ sub read_tabular {
 		s/\r//g;
 		my(@v) = split $delimiter;
 
-		unless (@names) {
+		unless (@colnames) {
 			if (defined $headers[0]) {
-				@names = @{$headers[0]};
-				unshift @names, "id" if scalar @v == 1+scalar @names;
-				### if scalar @v != scalar @names, there will be trouble
+				@colnames = @{$headers[0]};
+				unshift @colnames, "id" if scalar @v == 1+scalar @colnames;
+				### if scalar @v != scalar @colnames, there will be trouble
 			} else {
 				# make up names like col_0, col_1...
-				@names = map {"col_$_"} (0..$#v);
+				@colnames = map {"col_$_"} (0..$#v);
 			}
 		}
 		
 		$id = $v[$idcol];
 		next if $skipDuplicates && defined $rowwise{$id};
+		push @rownames, $id;
 		
 		$colHist[scalar @v]++;
 		$rows++;
-		foreach my $col ($skipcols..$#names) {
+		foreach my $col ($skipcols..$#colnames) {
 			my $v = $v[$col];
-			$colwise{$names[$col]}{$id} = $rowwise{$id}{$names[$col]} = $v;
+			next unless $v || length($v);
+			$colwise{$colnames[$col]}{$id} = $rowwise{$id}{$colnames[$col]} = $v;
 		}
 	}
 	close INF;
 	return {
-		'headers' => \@headers,
-		'colhist' => \@colHist,
-		'rows'    => $rows,
-		'colwise' => \%colwise,
-		'rowwise' => \%rowwise
+		'headers'  => \@headers,
+		'colnames' => \@colnames,
+		'rownames' => \@rownames,
+		'colhist'  => \@colHist,
+		'rows'     => $rows,
+		'colwise'  => \%colwise,
+		'rowwise'  => \%rowwise
 	};
 }
 
 sub read_lol { # list of lists
 	my($infile, $headerLines, $delimiter, $idcol, $skipcols) = @_;
-	my(@headers, @colHist, $rows, %colwise, %rowwise, $id);
+	my(@headers, @colnames, @rownames, @colHist, $rows, %colwise, %rowwise, $id);
 	$delimiter ||= "\t";
 
 	if ($infile =~ /\.gz$/) {
@@ -140,24 +142,29 @@ sub read_lol { # list of lists
 		$colHist[scalar @v]++;
 		$rows++;
 		$id = $v[$idcol];
+		push @rownames, $id;
 		foreach my $col ($skipcols..$#v) {
 			my $v = $v[$col];
 			$colwise{$v}{$id} = $rowwise{$id}{$v} = 1;
 		}
 	}
 	close INF;
+	my @colnames = sort keys %colwise;
 	return {
-		'headers' => \@headers,
-		'colhist' => \@colHist,
-		'rows'    => $rows,
-		'colwise' => \%colwise,
-		'rowwise' => \%rowwise
+		'headers'  => \@headers,
+		'colnames' => \@colnames,
+		'rownames' => \@rownames,
+		'colhist'  => \@colHist,
+		'rows'     => $rows,
+		'colwise'  => \%colwise,
+		'rowwise'  => \%rowwise
 	};
 }
 
 sub read_xyz { # row-col-value triples
 	my($infile, $headerLines, $delimiter) = @_;
-	my(@headers, @colHist, $rows, %colwise, %rowwise, $id, $attr, $v);
+	my(@headers, @colnames, @rownames, @colHist, $rows, %colwise, %rowwise, $id, $attr, $v);
+	my(%seenid, %seenattr);
 	$delimiter ||= "\t";
 
 	if ($infile =~ /\.gz$/) {
@@ -183,15 +190,21 @@ sub read_xyz { # row-col-value triples
 		$colHist[scalar @v]++;
 		$rows++;
 		($id, $attr, $v) = @v;
+		push @rownames, $id unless $seenid{$id};
+		$seenid{$id}++;
+		push @colnames, $attr unless $seenattr{$id};
+		$seenattr{$attr}++;
 		$colwise{$attr}{$id} = $rowwise{$id}{$attr} = $v;
 	}
 	close INF;
 	return {
-		'headers' => \@headers,
-		'colhist' => \@colHist,
-		'rows'    => $rows,
-		'colwise' => \%colwise,
-		'rowwise' => \%rowwise
+		'headers'  => \@headers,
+		'colnames' => \@colnames,
+		'rownames' => \@rownames,
+		'colhist'  => \@colHist,
+		'rows'     => $rows,
+		'colwise'  => \%colwise,
+		'rowwise'  => \%rowwise
 	};
 }
 
@@ -203,7 +216,10 @@ sub read_xml { ###unfinished
 	$content = $content->{'GENESET'}; ### specific
 	print join("\t", %{$content->{'GENESET'}[0]}), "\n";
 
+	#####
 	exit;
+	####
+	
 	while (<INF>) {
 		chomp;
 		my(@v) = split;
