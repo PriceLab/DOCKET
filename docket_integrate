@@ -1,31 +1,32 @@
 #!/bin/env nextflow
 scripts = "$baseDir/scripts"
 
-/* Similarity comparison defaults */
-params.cell_line_file = "$baseDir/data/Mut_site_GDSC.csv"
-params.tissue_file = "$baseDir/data/Mut_site_TCGA.csv"
-params.similarity_config = "$baseDir/test/similarity_compare.config"
+/* Data folder */
+params.data_dir = "data/LUAD"
+data_dir = file(params.data_dir)
+
+/* Input data folder */
+input_data = "$data_dir/input"
+
+/* Configuration files folder */
+config_data = "$data_dir/config"
+
+/* Specify similarity comparison input files */
+cell_line_file = "$input_data/Mut_site_GDSC.csv"
+tissue_file = "$input_data/Mut_site_TCGA.csv"
+similarity_config = "$config_data/similarity_compare.config"
 
 /* Mutation drug response analysis defaults */
-params.mut_matrix_file = "$baseDir/data/GDSC_mut_matrix.csv"
-params.drug_response_file = "$baseDir/data/GDSC_drugResponse_matrix.csv"
-params.drug_response_config = "$baseDir/test/drug_response.config"
+mut_matrix_file = "$input_data/GDSC_mut_matrix.csv"
+drug_response_file = "$input_data/GDSC_drugResponse_matrix.csv"
+drug_response_config = "$config_data/drug_response.config"
 
 /* Annotation and enrichment analysis defaults */
-params.annotations_file = "$baseDir/data/GDSC_Drug_anno.csv"
-params.annotations_config = "$baseDir/test/annotations.config"
+annotations_file = "$input_data/GDSC_Drug_anno.csv"
+annotations_config = "$config_data/annotations.config"
 
-params.docket = "$baseDir/test/test_integration.docket"
-
-/* interpret parameters */
-cell_line_file = file(params.cell_line_file)
-tissue_file = file(params.tissue_file)
-similarity_config = file(params.similarity_config)
-mut_matrix_file = file(params.mut_matrix_file)
-drug_response_file = file(params.drug_response_file)
-drug_response_config = file(params.drug_response_config)
-annotations_file = file(params.annotations_file)
-annotations_config = file(params.annotations_config)
+/* Location of generated docket */
+params.docket = "$baseDir/test/luad_integrate.docket"
 docket = file(params.docket)
 
 
