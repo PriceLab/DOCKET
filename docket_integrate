@@ -1,0 +1,108 @@
+#!/bin/env nextflow
+scripts = "$baseDir/scripts"
+
+/* Data folder */
+params.data_dir = "data/LUAD"
+data_dir = file(params.data_dir)
+
+/* Input data folder */
+input_data = "$data_dir/input"
+
+/* Configuration files folder */
+config_data = "$data_dir/config"
+
+/* Specify similarity comparison input files */
+cell_line_file = "$input_data/Mut_site_GDSC.csv"
+tissue_file = "$input_data/Mut_site_TCGA.csv"
+similarity_config = "$config_data/similarity_compare.config"
+
+/* Mutation drug response analysis defaults */
+mut_matrix_file = "$input_data/GDSC_mut_matrix.csv"
+drug_response_file = "$input_data/GDSC_drugResponse_matrix.csv"
+drug_response_config = "$config_data/drug_response.config"
+
+/* Annotation and enrichment analysis defaults */
+annotations_file = "$input_data/GDSC_Drug_anno.csv"
+annotations_config = "$config_data/annotations.config"
+
+/* Location of generated docket */
+params.docket = "$baseDir/test/luad_integrate.docket"
+docket = file(params.docket)
+
+
+/* Takes two files, one containing cell line gene mutation data and the other containing tumor tissue gene mutation   */
+/* data. Compare the similarity of mutations (i.e. gene and mutation site within the gene) by estimating the ratio of */
+/* identical mutation sites between the two data sets.                                                                */
+process integrate_similarity_compare {
+	publishDir "$docket/integration", mode: 'copyNoFollow'
+
+    output:
+    file 'similar_mutation_sites.csv' into similarity_out
+
+	"""
+	${scripts}/integrate_similarity_compare.py \
+	  --cell_line_file $cell_line_file \
+	  --tissue_file $tissue_file \
+	  --config_file $similarity_config \
+	  --file_out similar_mutation_sites.csv
+	"""
+}
+
+
+/* Takes two files, one containing cell line mutation matrix data and the other containing cell line drug response    */
+/* data. Merge these two tables and run drug sensitivity analysis for mutations in a specified list of genes.         */
+process integrate_drug_response {
+	publishDir "$docket/integration", mode: 'copyNoFollow'
+
+    input:
+    file similarity from similarity_out
+
+    output:
+    file 'mutation_drug_merged.csv' into drug_merged_out
+    file 'mutation_drug_pairs.csv' into drug_pairs_out
+
+	"""
+	${scripts}/integrate_drug_response.py \
+	  --mut_matrix_file $mut_matrix_file \
+	  --drug_response_file $drug_response_file \
+	  --mut_similarity_file $similarity \
+	  --config_file $drug_response_config \
+	  --merged_out mutation_drug_merged.csv \
+	  --mut_drug_pairs_out mutation_drug_pairs.csv
+	"""
+}
+
+
+/* # Takes two files, one containing drug/mutation sensitivity associations and one containing drug annotations.      */
+process integrate_annotations {
+	publishDir "$docket/integration", mode: 'copyNoFollow'
+
+    input:
+    file drug_pairs from drug_pairs_out
+
+    output:
+    file 'mutation_drug_pairs_annotated.csv' into annotations_out
+    file 'mutation_drug_pair_enrichment.csv' into enrichment_out
+
+	"""
+	${scripts}/integrate_annotations.py \
+	  --associations_file $drug_pairs \
+	  --annotations_file $annotations_file \
+	  --config_file $annotations_config \
+	  --annotations_out mutation_drug_pairs_annotated.csv \
+	  --enrichment_out mutation_drug_pair_enrichment.csv
+	"""
+}
+
+
+/* Copy Jupyter notebook for visualizing results */
+process copy_notebook {
+    publishDir "$docket/integration", mode: 'copyNoFollow'
+
+    output:
+    file 'review-docket-integrate-results.ipynb'
+
+    """
+    cp '$baseDir/notebooks/review-docket-integrate-results.ipynb' .
+    """
+}
