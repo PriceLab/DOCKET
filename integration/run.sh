@@ -1,12 +1,13 @@
 #!/bin/sh
 
 ######### Usages #########
-
+#./run.sh input_dir  output_dir
+######### Usages #########
 input=$1
 output=$2
 
 
-echo "Comparison:-----------------------------"
+echo "Comparison between TCGA & GDSC----------"
 
 python docket_integration_interface.py comp $input $output \
     config/Para_sim.json
@@ -25,9 +26,9 @@ echo "Integration-visulization: ---------------"
 python docket_integration_interface.py  visualization $input $output \
     config/Para_visualization.json
 
-echo "Integration-mut-expression: -------------"
-python docket_integration_interface.py mut_expr $input $output\
-    config/Para1_integration_mut_expr.json \
-    config/Para2_integration_mut_expr.json
+#echo "Integration-mut-expression: -------------"
+#python docket_integration_interface.py mut_expr $input $output\
+#    config/Para1_integration_mut_expr.json \
+#    config/Para2_integration_mut_expr.json
 
 echo "---------------Finished-----------------"

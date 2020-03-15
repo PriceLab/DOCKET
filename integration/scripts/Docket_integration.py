@@ -99,7 +99,7 @@ def Integration_category_numeric(Merged_mat, genelist_input, druglist_input):
                         if math.isnan(i) == False:
                             D_mut_new.append(i)
 
-                    if len(D_mut_new) > 3 and len(D_wt_new) > 3:
+                    if len(D_mut_new) > 2 and len(D_wt_new) > 2:
                         Sci_test = stats.ttest_ind(
                             D_mut_new, D_wt_new, axis=0, equal_var=True)
                         pvalue = Sci_test[1]
