@@ -3,13 +3,19 @@ $|=1;
 use strict;
 use JSON;
 
-my($docket) = @ARGV;
+my($docket, $docket_title) = @ARGV;
 unless ($docket) {
 	print "Usage: docket_overview <path to docket>\n";
 	exit;
 }
-
 die "$docket doesn't look like a docket\n" unless looks_like_a_docket($docket);
+
+my $outfile = "$docket/overview.html";
+unless ($docket_title) {
+	(undef, $docket_title) = $docket =~ /(.*\/)?(.*)/;
+}
+
+
 my $data_dir = "$docket/data";
 my $an_dir = "$docket/analyses";
 my $fp_dir = "$docket/fingerprints";
@@ -40,37 +46,90 @@ foreach (keys %$cols_hist) {
 		$num_cols++;
 	}
 }
-$empty_cols ||= 'zero';
+$empty_cols = 'zero' if $empty_cols<1;
 $num_cols ||= 'zero';
 
 # get info on correlations
 my($num_corr_headers, $num_corr) = read_table("$cmp_dir/num_assoc.gz");
 my($cat_corr_headers, $cat_corr) = read_table("$cmp_dir/cat_assoc.gz");
-my $overviews = [['<a href="data_overview.png"><img src="data_overview.png" style="max-width:500px"></a>',
-'<a href="data_overview_nullsorted.png"><img src="data_overview_nullsorted.png" style="max-width:500px"></a>']];
+my $overviews = [['<a href="visualizations/data_overview.png"><img src="visualizations/data_overview.png" style="max-width:500px; max-height:500px"></a>',
+'<a href="visualizations/data_overview_nullsorted.png"><img src="visualizations/data_overview_nullsorted.png" style="max-width:500px; max-height:500px"></a>']];
+#my $pcas = [['<a href="visualizations/rows_fp.pc1_pc2.pdf"><img src="visualizations/rows_fp.pc1_pc2.pdf" style="max-width:500px"></a>',
+#'<a href="visualizations/cols_fp.pc1_pc2.pdf"><img src="visualizations/cols_fp.pc1_pc2.pdf" style="max-width:500px"></a>']];
+my $pcas = [['<iframe src="visualizations/rows_fp.pc1_pc2.pdf">',
+'<iframe src="visualizations/cols_fp.pc1_pc2.pdf">']];
 
+
+# output
+open OUTF, ">$outfile";
 print_header("docket overview");
-print_section("DOCKET Overview", [
+print_section("DOCKET Overview for $docket_title", [
 	"Docket path: $docket",
 	join(" ", "Table size:", $nrows, "rows", "x", $ncols, "columns", "($empty_cols of which are empty, $num_cols are numerical)"),
-	[$overviews, 'table', ['original', 'null-sorted']],
 	]);
 
+print OUTF "<hr>\n";
+print_table($overviews, 'table', 'overviews', "Overviews", ['original', 'null-sorted']);
+#print "<hr>\n";
+#print_table($pcas, 'table', 'pcas', "PCA", ['rows', 'columns']);
+print OUTF "<hr>\n";
+print_table($col_info, 'table', 'columns', 'Columns', undef, {'values' => 'distinct non-NULL values'});
+print OUTF "<hr>\n";
+print_table($num_corr, 'table', 'numcorr', "Numerical associations", $num_corr_headers, {});
+print OUTF "<hr>\n";
+print_table($cat_corr, 'table', 'catcorr', "Categorical associations", $cat_corr_headers, {});
 
-print_section("Columns", [
-	[$col_info, 'table', undef, {'values' => 'distinct non-NULL values'}],
-	]);
 
-print_section("Numerical associations", [
-	[$num_corr, 'table', $num_corr_headers, {}, 5, 20],
-	]);
+print OUTF qq(
+<script src="https://code.jquery.com/jquery-3.4.1.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" crossorigin="anonymous"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.20/r-2.2.3/datatables.min.js"></script>
+  <script>
+    const config_cols = {
+     "language": {
+        "search": "&#128269;",
+        "searchPlaceholder": "search data"
+      },
+      "autoWidth": true,
+      "order": [
+        [0, "asc"]
+      ]
+    }
+    const config_num = {
+     "language": {
+        "search": "&#128269;",
+        "searchPlaceholder": "search data"
+      },
+      "autoWidth": true,
+      "order": [
+        [4, "asc"],
+        [3, "desc"]
+      ]
+    }
+    const config_cat = {
+     "language": {
+        "search": "&#128269;",
+        "searchPlaceholder": "search data"
+      },
+      "autoWidth": true,
+      "order": [
+        [3, "desc"],
+        [4, "desc"]
+      ]
+    }
 
-print_section("Categorical associations", [
-	[$cat_corr, 'table', $cat_corr_headers, {}, -5, 20],
-	]);
+    
+    \$(document).ready(function () {
+      \$('#columns').DataTable(config_cols);
+      \$('#numcorr').DataTable(config_num);
+      \$('#catcorr').DataTable(config_cat);
+    });
+  </script>
+  );
 
 print_footer();
-
+close OUTF;
 
 
 
@@ -79,25 +138,38 @@ print_footer();
 sub print_header {
 	my($title) = @_;
 	
-	print "<!doctype html public \"-//w3c//dtd html 4.0 transitional//en\">\n";
-	print "<html>\n<head>\n";
-	print "  <title>$title</title>\n" if $title;
-	print "</head>\n<body>\n";
+	print OUTF "<!doctype html public \"-//w3c//dtd html 4.0 transitional//en\">\n";
+	print OUTF "<html>\n<head>\n";
+	print OUTF "  <title>$title</title>\n" if $title;
+
+	print OUTF qq(
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <link href="/css/style.css" rel="stylesheet" type="text/css">
+  <style>
+    .row {
+      margin-bottom: 25px;
+    }
+  </style>
+);
+	
+	
+	print OUTF "</head>\n<body>\n";
 }
 
 sub print_footer {
-	print "</body>\n</html>\n";
+	print OUTF "</body>\n</html>\n";
 }
 
 sub print_section {
 	my($heading, $content) = @_;
 	
-	print "  <h2>$heading</h2>\n";
+	print OUTF "  <h2>$heading</h2>\n";
 	if (ref($content) eq 'ARRAY') {
 		print_block($_) foreach @$content;
 	} elsif (ref($content) eq 'HASH') {
 		foreach my $blockname (sort keys %$content) {
-			print "    <h3>$blockname</h3>\n";
+			print OUTF "    <h3>$blockname</h3>\n";
 			print_block($content->{$blockname});
 		}
 	}
@@ -114,12 +186,14 @@ sub print_block {
 	} elsif (ref($bl) eq 'HASH') {
 		
 	} else {
-		print "$bl<br>\n";
+		print OUTF "$bl<br>\n";
 	}
 }
 
 sub print_table {
-	my($what, $format, $headers, $replace, $sortkey, $show) = @_;
+	my($what, $format, $table_id, $table_title, $headers, $replace) = @_;
+	
+	my(@columns, $body);
 	
 	if (ref($what) eq 'HASH') {
 		my @keys = sort keys %$what;
@@ -128,43 +202,38 @@ sub print_table {
 			$cols{$_}++ foreach keys %$v;
 		}
 		my @cols = sort keys %cols;
-		print "<table border>\n";
-		print "<tr><th>", join("</th><th>", 'Column name', map {$replace->{$_} || $_} @cols), "</th></tr>\n";
+		@columns = ('Column name', map {$replace->{$_} || $_} @cols);
 		foreach my $key (@keys) {
-			print "<tr><td>$key</td><td>";
-			print join("</td><td>", map {$what->{$key}{$_} || " "} @cols);
+			$body .= "<tr><td>$key</td><td>";
+			$body .= join("</td><td>", map {$what->{$key}{$_} || " "} @cols);
 		}
-		print "</td></tr>\n";
-		print "</table>\n";
 	} elsif (ref($what) eq 'ARRAY') {
 		my @cols = @$headers;
-		print "<table border>\n";
-		print "<tr><th>", join("</th><th>", map {$replace->{$_} || $_} @cols), "</th></tr>\n";
-		if ($sortkey) {
-			my $reverse;
-			if ($sortkey<0) {
-				$reverse = 1;
-				$sortkey = -$sortkey-1;
-				my @sorted = sort {$b->[$sortkey] <=> $a->[$sortkey]} @$what;
-				$what = \@sorted;
-			} else {
-				$sortkey--;
-				my @sorted = sort {$a->[$sortkey] <=> $b->[$sortkey]} @$what;
-				$what = \@sorted;
-			}
-			
-		}
+		@columns = map {$replace->{$_} || $_} @cols;
 		my $shown;
 		foreach my $line (@$what) {
-			print "<tr><td>";
-			print join("</td><td>", @$line);
-			$shown++;
-			last if $shown>=$show;
+			$body .= "<tr><td>";
+			$body .= join("</td><td>", @$line);
 		}
-		print "</td></tr>\n";
-		print "</table>\n";
 	}
 	
+	print OUTF qq(
+            <div class="sorted-table__header">
+              <div class="sorted-table__container">
+                <h2>$table_title</h2>
+              </div>
+              );
+	
+	
+	print OUTF qq(<table id="$table_id" class="display compact responsive" border>\n);
+	print OUTF qq(<thead><tr><th class="text--gray">);
+	print OUTF join("</th><th class=\"text--gray\">", @columns);
+	print OUTF "</th></tr></thead>\n";
+	#print OUTF qq(<thead class="total_row"></thead>\n);
+	print OUTF "<tbody>$body</tbody>\n";
+	print OUTF "</table>\n";
+	print OUTF "</div>\n";
+
 }
 
 sub read_table {
