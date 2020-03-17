@@ -4,6 +4,7 @@ use strict;
 use JSON;
 my(@files) = @ARGV;
 my $kg = "knowledgegraphs";
+my $scaling_factor = 100;
 
 # Collect dockets to be compared
 my @dockets;
@@ -37,9 +38,8 @@ foreach my $file (@files) {
 }
 die "Not enough dockets to compare\n" unless scalar @dockets>1;
 @dockets = sort @dockets;
-#print scalar @dockets, " dockets to compare\n";
-#print join("\t", keys %graphFiles), "\n";
 
+print join("\t", qw/A B rho_avg confidence dockets minN maxN rho_slope rho_int pval_slope pval_int/), "\n";
 foreach my $graph (sort keys %graphFiles) {
 	my @docketsWithGraph = sort keys %{$graphFiles{$graph}};
 	next unless scalar @docketsWithGraph>1;
@@ -52,9 +52,11 @@ foreach my $graph (sort keys %graphFiles) {
 				# ingest all test results
 				foreach my $blob (@{$json->{$key}}) {
 					my $pair = join("\t", $blob->{'A'}, $blob->{'B'});
+					next if $pair =~ /days/;
 					foreach my $stat (keys %$blob) {
 						next if $stat eq 'A' || $stat eq 'B';
-						$stat{$pair}{$stat}{$d} = $blob->{$stat};
+						push @{$stat{$pair}{$stat}}, $stat eq 'pval' ? log(1e-100+$blob->{$stat}) : $blob->{$stat};
+						#$stat{$pair}{$stat}{$d} = $blob->{$stat};
 					}
 				}
 			} else {
@@ -62,14 +64,29 @@ foreach my $graph (sort keys %graphFiles) {
 			}
 		}
 	}
-	foreach my $key (sort keys %info) {
-		print join("\t", $graph, $key, %{$info{$key}}), "\n";
-	}
+	
 	foreach my $pair (sort keys %stat) {
-		foreach my $stat (sort keys %{$stat{$pair}}) {
-			next if scalar keys %{$stat{$pair}{$stat}}<2;
-			print join("\t", $stat, map({$stat{$pair}{$stat}{$_} // 'NA'} @docketsWithGraph), $pair), "\n";
+		next unless scalar @{$stat{$pair}{'N'}}>2;
+		my($minN, $maxN) = minmax($stat{$pair}{'N'});
+		my($m1, $b1, $avg1) = lsr_cols($stat{$pair}{'N'}, $stat{$pair}{'rho'});
+		unless (defined $m1) {
+			print "#weird pair $pair\n";
+			next;
 		}
+		
+		my($m2, $b2, $avg2) = lsr_cols($stat{$pair}{'N'}, $stat{$pair}{'pval'});
+		if ($avg1<0) {
+			$m1 = -$m1;
+			$b1 = -$b1;
+		}
+		
+		my $ksm = $m1*$scaling_factor - $m2;
+		print join("\t", $pair, sprintf("%.3f",$avg1), sprintf("%.3f", $ksm),
+			scalar @{$stat{$pair}{'N'}}, $minN, $maxN,
+			sprintf("%.3f", $m1), sprintf("%.3f", $b1),
+			sprintf("%.3f", -$m2), sprintf("%.3f", -$b2),
+			), "\n";
+		
 	}
 }
 
@@ -146,11 +163,41 @@ sub avgstd {
 	return $avg, $std;
 }
 
+sub minmax {
+	my($values) = @_;
+	my($min, $max);
+	foreach (@$values) {
+		$max = $_ if $_>$max;
+		$min = $_ if $_<$min || !defined $min;
+	}
+	return $min, $max;
+}
+
+
 sub fulldirlist {
 	my($dir) = @_;
 	opendir (DIR, $dir);
 	my @files = grep /^[^.]/, readdir DIR;
 	closedir DIR;
 	return @files;
+}
+
+sub lsr_cols {
+	my($xdata, $ydata) = @_;
+	
+	my($n, $sx, $sy, $sxy, $sxsq, $x, $y);
+	foreach my $i (0..$#$xdata) {
+		$x = $xdata->[$i];
+		$y = $ydata->[$i];
+		$n++;
+		$sx += $x;
+		$sy += $y;
+		$sxy += $x*$y;
+		$sxsq += $x**2;
+	}
+	return unless $n*$sxsq-$sx**2;
+	my $m = ($n*$sxy-$sx*$sy)/($n*$sxsq-$sx**2);
+	my $b = ($sy-$m*$sx)/$n;
+	return $m, $b, $sy/$n;
 }
 
