@@ -59,7 +59,7 @@ my $pcas = [['<a href="visualizations/rows_fp.pc1_pc2.png"><img src="visualizati
 
 # output
 open OUTF, ">$outfile";
-print_header("docket overview");
+print_header("DOCKET overview");
 print_section("DOCKET Overview for $docket_title", [
 	"Docket path: $docket",
 	join(" ", "Table size:", $nrows, "rows", "x", $ncols, "columns", "($empty_cols of which are empty, $num_cols are numerical)"),
