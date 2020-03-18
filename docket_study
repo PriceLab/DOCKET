@@ -100,9 +100,11 @@ process plot_PCA_col_hist_fingerprints {
 	/* plot PC1-PC2 on fingerprints of column histograms */
 	publishDir "$docket/visualizations", mode: 'copy'
 	input: file chfp from colshistfppca
-	output: file 'cols_hist_fp.pc1_pc2.pdf'
+	output:
+        file 'cols_hist_fp.pc1_pc2.pdf'
+        file 'cols_hist_fp.pc1_pc2.png'
 	"""
-	$dbin/plotpca.py $chfp cols_hist_fp.pc1_pc2.pdf
+	$dbin/plotpca.py $chfp cols_hist_fp.pc1_pc2
 	"""
 }
 process compare_col_hist_fingerprints {
@@ -259,11 +261,13 @@ process plot_PCA_row_fingerprints {
 	/* plot PC1-PC2 on fingerprints of rows */
 	publishDir "$docket/visualizations", mode: 'copy'
 	input:
-	    file pca from rowsfppca
-	    file rhc from rows_hier_clust
-	output: file 'rows_fp.pc1_pc2.pdf'
+        file pca from rowsfppca
+        file rhc from rows_hier_clust
+	output:
+        file 'rows_fp.pc1_pc2.pdf'
+        file 'rows_fp.pc1_pc2.png'
 	"""
-	$dbin/plotpca.py $pca rows_fp.pc1_pc2.pdf --clustering $rhc --clusters $params.rowclusters
+	$dbin/plotpca.py $pca rows_fp.pc1_pc2 --clustering $rhc --clusters $params.rowclusters
 	"""
 }
 /* END SECTION: row analysis pipeline */
@@ -367,11 +371,13 @@ process plot_PCA_col_fingerprints {
 	/* plot PC1-PC2 on fingerprints of columns */
 	publishDir "$docket/visualizations", mode: 'copy'
 	input:
-	    file pca from colsfppca
-	    file chc from cols_hier_clust
-	output: file 'cols_fp.pc1_pc2.pdf'
+        file pca from colsfppca
+        file chc from cols_hier_clust
+	output:
+        file 'cols_fp.pc1_pc2.pdf'
+        file 'cols_fp.pc1_pc2.png'
 	"""
-	$dbin/plotpca.py $pca cols_fp.pc1_pc2.pdf --clustering $chc --clusters $params.colclusters
+	$dbin/plotpca.py $pca cols_fp.pc1_pc2 --clustering $chc --clusters $params.colclusters
 	"""
 }
 process compute_numeric_associations {

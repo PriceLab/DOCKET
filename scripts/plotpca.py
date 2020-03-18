@@ -58,4 +58,5 @@ plt.figure()
 if len(names)>3:
     plt.scatter(tp[c1],tp[c2],c=color,marker='o',s=7, edgecolor='black', facecolor=color, linewidth=0.15)
 
-plt.savefig(outfile)
+plt.savefig(outfile + '.png')
+plt.savefig(outfile + '.pdf')
