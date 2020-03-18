@@ -29,8 +29,8 @@ process ingest_file {
 	publishDir "$docket/data", mode: 'copyNoFollow'
 	input: file infile
 	output:
-	    file 'original_data.gz' into originaldata
-	    /* file 'original_file' */
+		file 'original_data.gz' into originaldata
+		/* file 'original_file' */
 		file 'cols_data.json.gz' into colsdata
 		file 'rows_data.json.gz' into rowsdata
 		file 'cleaned_data.txt.gz' into cleandata
@@ -49,8 +49,8 @@ process plot_dataset_overviews {
 	publishDir "$docket/visualizations", mode: 'copy'
 	input: file data from cleandata
 	output:
-	    file 'data_overview.png'
-	    file 'data_overview_nullsorted.png'
+		file 'data_overview.png'
+		file 'data_overview_nullsorted.png'
 	"""
 	$dbin/plotMatrixOverview.pl $docket data_overview
 	$dbin/plotMatrixOverview.pl $docket data_overview_nullsorted nulls nulls
@@ -66,8 +66,8 @@ process column_histograms {
 	publishDir "$docket/data", mode: 'copy'
 	input: file cd from colsdata
 	output:
-	    file 'cols_hist.json.gz' into colshist
-	    file 'cols_types.json.gz' into colstypes
+		file 'cols_hist.json.gz' into colshist
+		file 'cols_types.json.gz' into colstypes
 	"""
 	$dbin/compute_hist.pl $cd cols_hist.json cols_types.json
 	gzip cols_hist.json cols_types.json
@@ -78,9 +78,9 @@ process compute_col_hist_fingerprints {
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file ch from colshist
 	output:
-	    file 'cols_hist_fp.trim.gz' into colshistfp
-	    file 'cols_hist_fp.fp' into colshistfpser
-	    file 'cols_hist_fp.id' into colshistfpserids
+		file 'cols_hist_fp.trim.gz' into colshistfp
+		file 'cols_hist_fp.fp' into colshistfpser
+		file 'cols_hist_fp.id' into colshistfpserids
 	"""
 	$dbin/compute_fp.pl $ch $histL | gzip -c > cols_hist_fp.raw.gz
 	$dbin/filterTable.pl cols_hist_fp.raw.gz 1 $params.minTriples | gzip -c > cols_hist_fp.trim.gz
@@ -101,8 +101,8 @@ process plot_PCA_col_hist_fingerprints {
 	publishDir "$docket/visualizations", mode: 'copy'
 	input: file chfp from colshistfppca
 	output:
-        file 'cols_hist_fp.pc1_pc2.pdf'
-        file 'cols_hist_fp.pc1_pc2.png'
+		file 'cols_hist_fp.pc1_pc2.pdf'
+		file 'cols_hist_fp.pc1_pc2.png'
 	"""
 	$dbin/plotpca.py $chfp cols_hist_fp.pc1_pc2
 	"""
@@ -112,8 +112,8 @@ process compare_col_hist_fingerprints {
 	publishDir "$docket/comparisons", mode: 'copy'
 	input: file chf from colshistfpser
 	output:
-	    file 'cols_hist_fp.aaa.gz' into chfaaa
-	    file 'cols_hist_fp.aaa.hist' into chfaaahist
+		file 'cols_hist_fp.aaa.gz' into chfaaa
+		file 'cols_hist_fp.aaa.hist' into chfaaahist
 	"""
 	$lphbin/searchLPHs.pl $chf 0 1000000 cols_hist_fp.aaa.hist | gzip -c > cols_hist_fp.aaa.gz
 	"""
@@ -124,8 +124,8 @@ process index_col_hist_fingerprints {
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file chf from colshistfp
 	output:
-	    file 'cols_hist_fp.tree' into colshistfpindex
-	    file 'cols_hist_fp.names' into colshistfpnames
+		file 'cols_hist_fp.tree' into colshistfpindex
+		file 'cols_hist_fp.names' into colshistfpnames
 	"""
 	$dbin/annoyIndexGz.py --file $chf --L $histL --norm 1 --out cols_hist_fp
 	"""
@@ -135,8 +135,8 @@ process KNN_col_hist_fingerprints {
 	errorStrategy 'ignore'
 	publishDir "$docket/comparisons", mode: 'copy'
 	input:
-	    file chfi from colshistfpindex
-	    file chfn from colshistfpnames
+		file chfi from colshistfpindex
+		file chfn from colshistfpnames
 	output: file 'cols_hist_fp.knn.gz'
 	"""
 	$dbin/annoyQueryAll.py --index $chfi --names $chfn --L $histL --k 100 | gzip -c > cols_hist_fp.knn.gz
@@ -152,8 +152,8 @@ process row_histograms {
 	publishDir "$docket/data", mode: 'copy'
 	input: file rd from rowsdata
 	output:
-	    file 'rows_hist.json.gz' into rowshist
-	    file 'rows_types.json.gz' into rowstypes
+		file 'rows_hist.json.gz' into rowshist
+		file 'rows_types.json.gz' into rowstypes
 	"""
 	$dbin/compute_hist.pl $rd rows_hist.json rows_types.json
 	gzip rows_hist.json rows_types.json
@@ -205,8 +205,8 @@ process serialize_cent_row_fingerprints {
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file rfp from rowscentfp
 	output:
-	    file 'rows_fp.fp' into rowsfp
-	    file 'rows_fp.id' into rowsfpids
+		file 'rows_fp.fp' into rowsfp
+		file 'rows_fp.id' into rowsfpids
 	"""
 	$lphbin/serializeLPH.pl rows_fp $L 1 0 $rfp
 	"""
@@ -216,8 +216,8 @@ process compare_row_fingerprints {
 	publishDir "$docket/comparisons", mode: 'copy'
 	input: file rfp from rowsfp
 	output:
-	    file 'rows_fp.aaa.gz' into rowsaaa
-	    file 'rows_fp.aaa.hist' into rowsaaahist
+		file 'rows_fp.aaa.gz' into rowsaaa
+		file 'rows_fp.aaa.hist' into rowsaaahist
 	"""
 	$lphbin/searchLPHs.pl $rfp 0 1000000 rows_fp.aaa.hist | gzip -c > rows_fp.aaa.gz
 	"""
@@ -228,8 +228,8 @@ process index_row_fingerprints {
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file rfp from rowstrimfp
 	output:
-	    file 'rows_fp.tree' into rowsfpindex
-	    file 'rows_fp.names' into rowsfpnames
+		file 'rows_fp.tree' into rowsfpindex
+		file 'rows_fp.names' into rowsfpnames
 	"""
 	$dbin/annoyIndexGz.py --file $rfp --L $L --norm 1 --out rows_fp
 	"""
@@ -239,33 +239,33 @@ process KNN_row_fingerprints {
 	errorStrategy 'ignore'
 	publishDir "$docket/comparisons", mode: 'copy'
 	input:
-	    file rfpi from rowsfpindex
-	    file rfpn from rowsfpnames
+		file rfpi from rowsfpindex
+		file rfpn from rowsfpnames
 	output: file 'rows_fp.knn.gz'
 	"""
 	$dbin/annoyQueryAll.py --index $rfpi --names $rfpn --L $L --k 100 | gzip -c > rows_fp.knn.gz
 	"""
 }
 process row_cluster_hier {
-    /* Compute row-wise clustering */
-    publishDir "$docket/analyses", mode: 'copy'
-    input: file rpca from rowsfppca
-    output:
-        file 'rows_hier_linkage.txt.gz' into rows_hier_linkage
-        file 'rows_hier_clusters.txt.gz' into rows_hier_clust
-    """
-    $dbin/hierarchical_clustering.py --source $rpca --linkage_out rows_hier_linkage.txt.gz | gzip -c > rows_hier_clusters.txt.gz
-    """
+	/* Compute row-wise clustering */
+	publishDir "$docket/analyses", mode: 'copy'
+	input: file rpca from rowsfppca
+	output:
+		file 'rows_hier_linkage.txt.gz' into rows_hier_linkage
+		file 'rows_hier_clusters.txt.gz' into rows_hier_clust
+	"""
+	$dbin/hierarchical_clustering.py --source $rpca --linkage_out rows_hier_linkage.txt.gz | gzip -c > rows_hier_clusters.txt.gz
+	"""
 }
 process plot_PCA_row_fingerprints {
 	/* plot PC1-PC2 on fingerprints of rows */
 	publishDir "$docket/visualizations", mode: 'copy'
 	input:
-        file pca from rowsfppca
-        file rhc from rows_hier_clust
+		file pca from rowsfppca
+		file rhc from rows_hier_clust
 	output:
-        file 'rows_fp.pc1_pc2.pdf'
-        file 'rows_fp.pc1_pc2.png'
+		file 'rows_fp.pc1_pc2.pdf'
+		file 'rows_fp.pc1_pc2.png'
 	"""
 	$dbin/plotpca.py $pca rows_fp.pc1_pc2 --clustering $rhc --clusters $params.rowclusters
 	"""
@@ -315,8 +315,8 @@ process serialize_cent_col_fingerprints {
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file cfp from colscentfp
 	output:
-	    file 'cols_fp.fp' into colsfp
-	    file 'cols_fp.id' into colsfpids
+		file 'cols_fp.fp' into colsfp
+		file 'cols_fp.id' into colsfpids
 	"""
 	$lphbin/serializeLPH.pl cols_fp $L 1 1 $cfp
 	"""
@@ -326,8 +326,8 @@ process compare_col_fingerprints {
 	publishDir "$docket/comparisons", mode: 'copy'
 	input: file cfp from colsfp
 	output:
-	    file 'cols_fp.aaa.gz' into colsaaa
-	    file 'cols_fp.aaa.hist' into colsaaahist
+		file 'cols_fp.aaa.gz' into colsaaa
+		file 'cols_fp.aaa.hist' into colsaaahist
 	"""
 	$lphbin/searchLPHs.pl $cfp 0 1000000 cols_fp.aaa.hist | gzip -c > cols_fp.aaa.gz
 	"""
@@ -338,8 +338,8 @@ process index_col_fingerprints {
 	publishDir "$docket/fingerprints", mode: 'copy'
 	input: file cfp from colstrimfp
 	output:
-	    file 'cols_fp.tree' into colsfpindex
-	    file 'cols_fp.names' into colsfpnames
+		file 'cols_fp.tree' into colsfpindex
+		file 'cols_fp.names' into colsfpnames
 	"""
 	$dbin/annoyIndexGz.py --file $cfp --L $L --norm 1 --out cols_fp
 	"""
@@ -349,33 +349,33 @@ process KNN_col_fingerprints {
 	errorStrategy 'ignore'
 	publishDir "$docket/comparisons", mode: 'copy'
 	input:
-	    file cfpi from colsfpindex
-	    file cfpn from colsfpnames
+		file cfpi from colsfpindex
+		file cfpn from colsfpnames
 	output: file 'cols_fp.knn.gz'
 	"""
 	$dbin/annoyQueryAll.py --index $cfpi --names $cfpn --L $L --k 100 | gzip -c > cols_fp.knn.gz
 	"""
 }
 process col_cluster_hier {
-    /* Compute col-wise clustering */
-    publishDir "$docket/analyses", mode: 'copy'
-    input: file cpca from colsfppca
-    output:
-        file 'cols_hier_linkage.txt.gz' into cols_hier_linkage
-        file 'cols_hier_clusters.txt.gz' into cols_hier_clust
-    """
-    $dbin/hierarchical_clustering.py --source $cpca --linkage_out cols_hier_linkage.txt.gz | gzip -c > cols_hier_clusters.txt.gz
-    """
+	/* Compute col-wise clustering */
+	publishDir "$docket/analyses", mode: 'copy'
+	input: file cpca from colsfppca
+	output:
+		file 'cols_hier_linkage.txt.gz' into cols_hier_linkage
+		file 'cols_hier_clusters.txt.gz' into cols_hier_clust
+	"""
+	$dbin/hierarchical_clustering.py --source $cpca --linkage_out cols_hier_linkage.txt.gz | gzip -c > cols_hier_clusters.txt.gz
+	"""
 }
 process plot_PCA_col_fingerprints {
 	/* plot PC1-PC2 on fingerprints of columns */
 	publishDir "$docket/visualizations", mode: 'copy'
 	input:
-        file pca from colsfppca
-        file chc from cols_hier_clust
+		file pca from colsfppca
+		file chc from cols_hier_clust
 	output:
-        file 'cols_fp.pc1_pc2.pdf'
-        file 'cols_fp.pc1_pc2.png'
+		file 'cols_fp.pc1_pc2.pdf'
+		file 'cols_fp.pc1_pc2.png'
 	"""
 	$dbin/plotpca.py $pca cols_fp.pc1_pc2 --clustering $chc --clusters $params.colclusters
 	"""
@@ -385,10 +385,11 @@ process compute_numeric_associations {
 	publishDir "$docket/knowledgegraphs", pattern: "*.json.gz", mode: 'copy'
 	publishDir "$docket/comparisons", pattern: "*assoc.gz", mode: 'copy'
 	input:
-            file data from cleandata
-            file ctypes from colstypes
-	output: file 'num_assoc.json.gz'
-	output: file 'num_assoc.gz'
+		file data from cleandata
+		file ctypes from colstypes
+	output:
+		file 'num_assoc.json.gz'
+		file 'num_assoc.gz'
 	"""
 	$dbin/numerical_associations.py --infile $data --types_file $ctypes | gzip -c > num_assoc.gz
 	"""
@@ -397,8 +398,8 @@ process compute_categorical_associations {
 	/* compute pairwise Cramer V and Theil's U between categorical columns */
 	publishDir "$docket/comparisons", mode: 'copy'
 	input:
-            file data from cleandata
-            file ctypes from colstypes
+		file data from cleandata
+		file ctypes from colstypes
 	output: file 'cat_assoc.gz'
 	"""
 	$dbin/categorical_associations.py --infile $data --types_file $ctypes | gzip -c > cat_assoc.gz
@@ -411,57 +412,57 @@ process compute_categorical_associations {
 /* ENRICHMENT ANALYSIS */
 
 process row_generate_cluster_membership {
-    /* Compute row-wise clustering */
-    publishDir "$docket/analyses", mode: 'copy'
-    input:
-        file rpca from rowsfppca
-        file rlink from rows_hier_linkage
-    output: file 'row_cluster_members.json.gz' into rows_hclust_members
-    """
-    $dbin/generate_cluster_membership.py \
-      --source $rpca \
-      --link_table_in $rlink \
-      --cl_members_out row_cluster_members.json.gz
-    """
+	/* Compute row-wise clustering */
+	publishDir "$docket/analyses", mode: 'copy'
+	input:
+		file rpca from rowsfppca
+		file rlink from rows_hier_linkage
+	output: file 'row_cluster_members.json.gz' into rows_hclust_members
+	"""
+	$dbin/generate_cluster_membership.py \
+	  --source $rpca \
+	  --link_table_in $rlink \
+	  --cl_members_out row_cluster_members.json.gz
+	"""
 }
 
 process pairwise_occurrence_counts {
-    /* Get occurrence counts for all attributes and parent/children trios for branch points in cluster hierarchy */
-    publishDir "$docket/analyses", mode: 'copy'
-    input:
-        file cdata from colsdata
-        file rhc_members from rows_hclust_members
-    output: file 'pairwise_occurrence_counts.json.gz' into occur_counts
-    """
-    $dbin/pairwise_occurrence_counts.py \
-      --source $cdata \
-      --cluster_members $rhc_members \
-      --counts_out pairwise_occurrence_counts.json.gz
-    """
+	/* Get occurrence counts for all attributes and parent/children trios for branch points in cluster hierarchy */
+	publishDir "$docket/analyses", mode: 'copy'
+	input:
+		file cdata from colsdata
+		file rhc_members from rows_hclust_members
+	output: file 'pairwise_occurrence_counts.json.gz' into occur_counts
+	"""
+	$dbin/pairwise_occurrence_counts.py \
+	  --source $cdata \
+	  --cluster_members $rhc_members \
+	  --counts_out pairwise_occurrence_counts.json.gz
+	"""
 }
 
 process generate_enrichment_results {
-    /* Calculate and write to output enrichment results */
-    publishDir "$docket/analyses/enrichment", mode: 'copy'
-    input:
-        file cl_members from rows_hclust_members
-        file counts from occur_counts
-    output: file 'enrich_results_*.txt.gz' into enrichment_results
-    """
-    $dbin/compute_chi_squared.py \
-      --counts_file $counts \
-      --cluster_members $cl_members
-    """
+	/* Calculate and write to output enrichment results */
+	publishDir "$docket/analyses/enrichment", mode: 'copy'
+	input:
+		file cl_members from rows_hclust_members
+		file counts from occur_counts
+	output: file 'enrich_results_*.txt.gz' into enrichment_results
+	"""
+	$dbin/compute_chi_squared.py \
+	  --counts_file $counts \
+	  --cluster_members $cl_members
+	"""
 }
 
 process copy_notebooks {
-    /* Copy Jupyter notebook for visualizing results */
-    publishDir "$docket/visualizations", mode: 'copy'
-    output:
-        file 'results.py'
-        file 'review-docket-study-results.ipynb'
-    """
-    cp '$baseDir/common/results.py' .
-    cp '$baseDir/notebooks/review-docket-study-results.ipynb' .
-    """
+	/* Copy Jupyter notebook for visualizing results */
+	publishDir "$docket/visualizations", mode: 'copy'
+	output:
+		file 'results.py'
+		file 'review-docket-study-results.ipynb'
+	"""
+	cp '$baseDir/common/results.py' .
+	cp '$baseDir/notebooks/review-docket-study-results.ipynb' .
+	"""
 }

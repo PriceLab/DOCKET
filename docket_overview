@@ -54,11 +54,8 @@ my($num_corr_headers, $num_corr) = read_table("$cmp_dir/num_assoc.gz");
 my($cat_corr_headers, $cat_corr) = read_table("$cmp_dir/cat_assoc.gz");
 my $overviews = [['<a href="visualizations/data_overview.png"><img src="visualizations/data_overview.png" style="max-width:500px; max-height:500px"></a>',
 '<a href="visualizations/data_overview_nullsorted.png"><img src="visualizations/data_overview_nullsorted.png" style="max-width:500px; max-height:500px"></a>']];
-#my $pcas = [['<a href="visualizations/rows_fp.pc1_pc2.pdf"><img src="visualizations/rows_fp.pc1_pc2.pdf" style="max-width:500px"></a>',
-#'<a href="visualizations/cols_fp.pc1_pc2.pdf"><img src="visualizations/cols_fp.pc1_pc2.pdf" style="max-width:500px"></a>']];
-my $pcas = [['<iframe src="visualizations/rows_fp.pc1_pc2.pdf">',
-'<iframe src="visualizations/cols_fp.pc1_pc2.pdf">']];
-
+my $pcas = [['<a href="visualizations/rows_fp.pc1_pc2.png"><img src="visualizations/rows_fp.pc1_pc2.png" style="max-width:500px"></a>',
+'<a href="visualizations/cols_fp.pc1_pc2.png"><img src="visualizations/cols_fp.pc1_pc2.png" style="max-width:500px"></a>']];
 
 # output
 open OUTF, ">$outfile";
@@ -69,9 +66,9 @@ print_section("DOCKET Overview for $docket_title", [
 	]);
 
 print OUTF "<hr>\n";
-print_table($overviews, 'table', 'overviews', "Overviews", ['original', 'null-sorted']);
-#print "<hr>\n";
-#print_table($pcas, 'table', 'pcas', "PCA", ['rows', 'columns']);
+print_table($overviews, 'table', 'overviews', "Data overviews (<font color=\"blue\">numbers</font>, <font color=\"red\">strings</font>)", ['original', 'null-sorted']);
+print OUTF "<hr>\n";
+print_table($pcas, 'table', 'pcas', "PCA (PC1 vs. PC2)", ['objects (rows)', 'attributes (columns)']);
 print OUTF "<hr>\n";
 print_table($col_info, 'table', 'columns', 'Columns', undef, {'values' => 'distinct non-NULL values'});
 print OUTF "<hr>\n";
