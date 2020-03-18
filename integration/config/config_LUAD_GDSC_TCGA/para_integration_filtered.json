@@ -1,0 +1,11 @@
+{
+"input_file_1":"Mut_site_GDSC.csv",
+"input_file_2":"Drug_GDSC_matrix.csv",
+"input_file_TCGA_cosmic":"../Dataset/variants.xlsx",
+"Sample_label":"COSMIC_identifier",
+"Gene_label":"HGNC_gene_symbol",
+"output_file":"GDSC_mut_TCGA_cosmic_drug_merge.csv",
+"Genelist":["PIK3CA","TP53","KRAS","EGFR"],
+"Druglist":[],                                
+"Output": "mut_cancerRelated_drug_pair.csv" 
+}

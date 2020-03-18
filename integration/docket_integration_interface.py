@@ -101,6 +101,46 @@ def main():
 				excute_jupyterNotebook(default_filename)
 
 				print("Finished! Please check the output file in " + default_filename)
+
+		if sys.argv[1] == 'mut_filter_drugResponse':
+			directories = {"input_dir": sys.argv[2],"output_dir":sys.argv[3]}
+			User_output = sys.argv[3]
+
+			if os.path.isdir(User_output) == False:
+				os.mkdir(User_output)
+
+			para1 = load_json(sys.argv[4])
+			#para2 = load_json(sys.argv[5])
+			#print(para2)
+			if len(sys.argv) == 5:
+				with open(Script_dir + "Integration_temp_GDSC_mut_TCGA_cosmic_filter_drug_response.ipynb") as fp:
+			   		content = json.load(fp)
+
+				default_filename = User_output+"Integration_temp_GDSC_mut_TCGA_cosmic_filter_drug_response.ipynb"
+				
+				directory_content = []
+				directory_content.append('directories = {')
+				for item in reformat_json(directories):
+					directory_content.append(item)
+				directory_content.append('}')
+				content['cells'][3]['source'] = directory_content
+
+				new_content = []
+				new_content.append('input_data = {')
+				for item in reformat_json(para1):
+					new_content.append(item)
+				new_content.append('}')
+
+				content['cells'][5]['source'] = new_content
+
+				
+				jupyter_content = content
+				with open(default_filename, 'w') as fp:
+					json.dump(content, fp, indent=2)
+				excute_jupyterNotebook(default_filename)
+
+				print("Finished! Please check the output file in " + default_filename)
+
 		elif sys.argv[1] == 'mut_expr':
 			directories = {"input_dir": sys.argv[2], "output_dir":sys.argv[3]}
 			User_output = sys.argv[3]
