@@ -163,7 +163,7 @@ def load_file_data_from_config(config):
     comment = None if pd.isnull(comment) else comment
 
     # Load data
-    data = pd.read_csv(path, sep=sep, index_col=index_col, header=header, comment=comment)
+    data = pd.read_csv(path, sep=sep, index_col=index_col, header=header, comment=comment, low_memory=False)
 
     # For duplicate index values, drop all but the first row
     data = data.loc[~data.index.duplicated(keep='first')]
@@ -184,7 +184,7 @@ def load_datasets_from_config(io_config):
     data = datasets[file_ids[0]]
     for file_id in file_ids[1:]:
         data = data.merge(datasets[file_id], how='outer', left_index=True, right_index=True,
-                          sort=True, suffixes=('_1', '_2'))
+                          sort=False, suffixes=('_1', '_2'))
 
     idx = data.index
     idx_cnts = idx.value_counts()[idx.unique()]  # Retain original ordering
