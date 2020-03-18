@@ -39,6 +39,7 @@ foreach my $file (@files) {
 die "Not enough dockets to compare\n" unless scalar @dockets>1;
 @dockets = sort @dockets;
 
+# Combine, model and report
 print join("\t", qw/A B rho_avg confidence dockets minN maxN rho_slope rho_int pval_slope pval_int/), "\n";
 foreach my $graph (sort keys %graphFiles) {
 	my @docketsWithGraph = sort keys %{$graphFiles{$graph}};
@@ -89,41 +90,6 @@ foreach my $graph (sort keys %graphFiles) {
 		
 	}
 }
-
-exit;
-# Step 1: compare num_assoc output
-my(%n, %rho, %pval);
-foreach my $i (0..$#dockets) {
-	next unless -e "$dockets[$i]/comparisons/num_assoc.gz";
-	open RES, "gunzip -c $dockets[$i]/comparisons/num_assoc.gz |";
-	while (<RES>) {
-		next if /^#/;
-		chomp;
-		my($q, $t, $n, $rho, $p) = split /\t/;
-		next if $q eq 'variableA';
-		($q, $t) = sort ($q, $t);
-		my $id = join("\t", $q, $t);
-		push @{$n{$id}}, $n;
-		push @{$rho{$id}}, $rho;
-		push @{$pval{$id}}, $p;
-	}
-	close RES;
-}
-
-
-foreach my $id (keys %n) {
-	next unless scalar @{$rho{$id}}>10;
-	my($ravg, $rstd) = avgstd($rho{$id});
-	my($pavg, $pstd) = avgstd($pval{$id});
-	print join("\t", $n{$id}[0], $n{$id}[-1], $ravg, $rstd, $pavg, $pstd, $id), "\n";
-}
-
-
-
-
-
-
-
 
 #########################
 sub read_json {
