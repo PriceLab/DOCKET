@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+from cyjupyter import Cytoscape
 
 
 def plot_scatter_projections(data, labels):
@@ -65,3 +65,43 @@ def filter_enrichment_results(data, min_frac_diff=None, p_val_cutoff=None):
         data = data.loc[f]
 
     return data
+
+
+def generate_graph_visualization(data, annotate='Drug_Name'):
+    # Convenience function for generating node and edge lists
+    def create_nodes_and_edge(gene_label, drug_label, edge_value, idx):
+        gene_node = {'data': {'id': gene_label, 'color': 'yellow', 'shape': 'ellipse'}}
+        drug_node = {'data': {'id': drug_label, 'color': 'grey', 'shape': 'rectangle'}}
+        edge_color = 'red' if edge_value >= 0 else 'black'
+        edge = {'data': {'id': f'edge{idx}', 'source': gene_label, 'target': drug_label, 'type': edge_color}}
+        return gene_node, drug_node, edge
+
+    # Generate node and edge lists
+    nodes_and_edges = [create_nodes_and_edge(f1, data[annotate].iloc[i], data['SE'].iloc[i], i)
+                       for i, f1 in enumerate(data['F1'])]
+    nodes_and_edges = pd.DataFrame(nodes_and_edges, columns=['genes', 'drugs', 'edges'])
+    nodes_list = list(nodes_and_edges.genes) + list(nodes_and_edges.drugs)
+    edges_list = list(nodes_and_edges.edges)
+
+    # Specify styles for nodes and edges
+    cy_style = [{'selector': 'node',
+                 'style': {'background-color': 'data(color)',
+                           'label': 'data(id)',
+                           'width': 12,
+                           'height': 12,
+                           'shape': 'data(shape)',
+                           'color': 'grey',
+                           'font-weight': 400,
+                           'text-halign': 'middle',
+                           'text-valign': 'bottom',
+                           'font-size': 6,
+                           'size': 3}},
+                {'selector': 'edge',
+                 'style': {'width': 1,
+                           'line-color': 'data(type)',
+                           'target-arrow-color': '#37474F',
+                           'target-arrow-shape': 'triangle'}}]
+
+    # Create and return graph
+    cy_data = {'elements': {'nodes': nodes_list, 'edges': edges_list}}
+    return Cytoscape(data=cy_data, visual_style=cy_style, background='#FFFFFF')

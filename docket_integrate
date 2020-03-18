@@ -100,9 +100,11 @@ process copy_notebook {
     publishDir "$docket/integration", mode: 'copyNoFollow'
 
     output:
+    file 'results.py'
     file 'review-docket-integrate-results.ipynb'
 
     """
+    cp '$baseDir/common/results.py' .
     cp '$baseDir/notebooks/review-docket-integrate-results.ipynb' .
     """
 }
