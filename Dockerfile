@@ -16,6 +16,8 @@ RUN apt-get update && apt-get install -y openjdk-8-jdk \
   libjson-perl libgd-perl subversion \
   && ln -s /usr/bin/env /bin/env
 
+RUN apt-get install -y vim
+
 USER jovyan
 # Add nextflow to /home/jovyan/bin so that it's in PATH
 RUN mkdir /home/jovyan/bin

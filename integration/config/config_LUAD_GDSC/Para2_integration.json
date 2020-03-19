@@ -1,0 +1,5 @@
+{
+"Genelist": ["TP53","KRAS","BRAF","EGFR"],
+"Druglist":[], 
+"Output": "mut_drug_pair.csv"
+}
