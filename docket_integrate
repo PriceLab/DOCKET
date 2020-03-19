@@ -17,8 +17,8 @@ tissue_file = "$input_data/Mut_site_TCGA.csv"
 similarity_config = "$config_data/similarity_compare.config"
 
 /* Mutation drug response analysis defaults */
-mut_matrix_file = "$input_data/GDSC_mut_matrix.csv"
-drug_response_file = "$input_data/GDSC_drugResponse_matrix.csv"
+mut_matrix_file = "$input_data/Mut_GDSC_matrix.csv"
+drug_response_file = "$input_data/Drug_GDSC_matrix.csv"
 drug_response_config = "$config_data/drug_response.config"
 
 /* Annotation and enrichment analysis defaults */
