@@ -140,6 +140,7 @@ Output/ : the output directory
 visualization: Label for which process will the integration process do
 config/Para_visulization.json: Parameter file
 
+
 ## An example of integration of gene mutation and gene expression
 ```bash
 $ python docket_integration_interface.py mut_expr  \
