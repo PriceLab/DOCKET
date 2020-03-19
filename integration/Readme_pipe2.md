@@ -2,6 +2,13 @@
 # This is a seperate pipeline that filter the variants in GDSC mutation data with the somatic mutations in TCGA and Cosmic dataset, and use the filtered varients to analyze the association between tumor related variants and drug response.
 
 ## Run in the docker enviroment:
+Follow the instruction in the README.md in the upper dirctory.
+```bash
+$ docker-compose build
+$ docker-compose up
+$ docker-compose exec docket bash
+```
+Once you are in the docker enviroment: [jovyan@137216bcc469:/app$ , you can run the following the example with the input files from 
 
 ### About the input files:
 #### Parameter files in /app/integration/config/config_LUAD_GDSC_TCGA
