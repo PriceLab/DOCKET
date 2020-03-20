@@ -1,5 +1,5 @@
 
-# This is a seperate pipeline that filter the variants in GDSC mutation data with the somatic mutations in TCGA and Cosmic dataset, and use the filtered varients to analyze the association between tumor related variants and drug response.
+## This is a seperate pipeline that filter the variants in GDSC mutation data with the somatic mutations in TCGA and Cosmic dataset, and use the filtered varients to analyze the association between tumor related variants and drug response.
 
 ## Run in the docker enviroment:
 Follow the instruction in the README.md in the upper dirctory.
@@ -8,7 +8,9 @@ $ docker-compose build
 $ docker-compose up
 $ docker-compose exec docket bash
 ```
-Once you are in the docker enviroment: [jovyan@137216bcc469:/app$ , you can run the following the example with the input files from 
+Once you are in the docker enviroment: [jovyan@137216bcc469:/app$ , 
+you can run the following the example with the input files
+
 
 ### About the input files:
 #### Parameter files in /app/integration/config/config_LUAD_GDSC_TCGA
@@ -43,6 +45,8 @@ $ ./run_GDSC_TCGA.sh /app/integration/data/Data_input_for_LUAD/ /app/integration
 
 Parameters description:
 /app/integration/data/Data_input_for_LUAD/: absolute directory for the input data
-/app/integration/Output_LUAD_demo/: absolute directory for the output; Note: '/' at the end is needed!
-####  '/' at the end is needed!
-####  /app/integration/Output_LUAD_demo/: the output directory need to be a subdirectory of 'integration'
+/app/integration/Output_LUAD_demo/: absolute directory for the output; 
+
+Notes: 
+1. '/' at the end is needed!
+2. /app/integration/Output_LUAD_demo/: the output directory need to be a subdirectory of 'integration'

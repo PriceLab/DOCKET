@@ -87,12 +87,12 @@ Command:
 $ python docket_integration_interface.py comp  \
 input_dir/ \
 output_dir/  \
-config/Para_sim.json
+config/config_LUAD_GDSC/Para_sim.json
 ```
 Parameters description:
 Output/ : the output directory
 comp: Label for which process will the integration process do
-config/Para_sim.json: Parameter file
+config/config_LUAD_GDSC/Para_sim.json: Parameter file
 
 ## An example of integration of gene mutation and drug sensitivity
 Command:
@@ -100,31 +100,31 @@ Command:
 $ python docket_integration_interface.py mut_drugResponse \
  input_dir/  \
  output_dir/  \
- config/Para1_integration.json \
- config/Para2_integration.json
+ config/config_LUAD_GDSC/Para1_integration.json \
+ config/config_LUAD_GDSC/Para2_integration.json
 ```
 
 Parameters description:
 Output/ : the output directory
 mut_drugResponse: Label for which process will the integration process do
-config/Para1_integration.json: Parameter file
-config/Para2_integration.json: Parameter file
+config/config_LUAD_GDSC/Para1_annotation.json: Parameter file
+config/config_LUAD_GDSC/Para2_annotation.json: Parameter file
 
 ## An example of annotate the knowledge graph
 ```bash
 $ python docket_integration_interface.py annotation \
  input_dir/  \
  output_dir/  \
- config/Para1_annotation.json \ 
- config/Para2_annotation.json
+ config/config_LUAD_GDSC/Para1_annotation.json \ 
+ config/config_LUAD_GDSC/Para2_annotation.json
 
 ```
 
 Parameters description:
 Output/ : the output directory
 annotation: Label for which process will the integration process do
-config/Para1_annotation.json: Parameter file 
-config/Para2_annotation.json: Parameter file
+config/config_LUAD_GDSC/Para1_annotation.json: Parameter file 
+config/config_LUAD_GDSC/Para2_annotation.json: Parameter file
 
 
 ## An example of visualize the knowledge graph
@@ -132,13 +132,13 @@ config/Para2_annotation.json: Parameter file
 $ python docket_integration_interface.py visualization  \
 input_dir/  \
 output_dir/  \
-config/Para_visualization.json   
+config/config_LUAD_GDSC/Para_visualization.json
 ```
 
 Parameters description:
 Output/ : the output directory
 visualization: Label for which process will the integration process do
-config/Para_visulization.json: Parameter file
+config/config_LUAD_GDSC/Para_visulization.json: Parameter file
 
 
 ## An example of integration of gene mutation and gene expression
@@ -146,11 +146,11 @@ config/Para_visulization.json: Parameter file
 $ python docket_integration_interface.py mut_expr  \
 input_dir/  \
 output_dir/  \
-config/Para1_integration_mut_expr.json config/Para2_integration_mut_expr.json
+config/config_LUAD_GDSC/Para1_integration_mut_expr.json config/config_LUAD_GDSC/Para2_integration_mut_expr.json
 ```
 
 Parameters description:
 Output/ : the output directory
 mut_drugResponse: Label for which process will the integration process do
-config/Para1_integration_mut_expr.json: Parameter file
-cconfig/Para2_integration_mut_expr.json: Parameter file
+config/config_LUAD_GDSC/Para1_integration_mut_expr.json: Parameter file
+cconfig/config_LUAD_GDSC/Para2_integration_mut_expr.json: Parameter file
