@@ -9,8 +9,8 @@ output=$2
 
 echo "Comparison between TCGA & GDSC----------"
 
-#python docket_integration_interface.py comp $input $output \
-#    config/config_LUAD_GDSC/Para_sim.json
+python docket_integration_interface.py comp $input $output \
+    config/config_LUAD_GDSC/Para_sim.json
 
 echo "Integration-mut-drug response:----------"
 python docket_integration_interface.py mut_drugResponse $input $output \
@@ -26,10 +26,10 @@ echo "Integration-visulization: ---------------"
 python docket_integration_interface.py  visualization $input $output \
     config/config_LUAD_GDSC/Para_visualization.json
 
-#echo "Integration-mut-expression: -------------"
-#python docket_integration_interface.py mut_expr $input $output\
-#    config/Para1_integration_mut_expr.json \
-#    config/Para2_integration_mut_expr.json
+echo "Integration-mut-expression: -------------"
+python docket_integration_interface.py mut_expr $input $output\
+    config/config_LUAD_GDSC/Para1_integration_mut_expr.json \
+    config/config_LUAD_GDSC/Para2_integration_mut_expr.json
 
 
 
