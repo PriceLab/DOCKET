@@ -3,10 +3,13 @@ services:
   docket:
     build: "."
     image: "docket-dev"
+    # sha1 hash used to define password ("test" here)
+    command: start-notebook.sh  --NotebookApp.password='sha1:9316432938f9:93985dffbb854d31308dfe0602a51db947fb7d80'
     environment:
       DEBUG: 1
       PYTHONUNBUFFERED: 1
       PYTHONPATH: '/app'
+      JUPYTER_ENABLE_LAB: 'yes'
     ports:
       - 8888:8888
     volumes:

@@ -2,3 +2,4 @@ annoy==1.16.3
 cyjupyter==0.2.0
 plotly==4.5.2
 git+git://github.com/gglusman/data-fingerprints#egg=datafingerprint
+jupyterlab
